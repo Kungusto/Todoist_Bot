@@ -1,7 +1,9 @@
+# -------- Без этих команд он не видит папку src в импортах
 import sys
 from pathlib import Path 
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
+# --------
 
 from src.repositories.tasks_first_step import TasksStepOneRepository
 from src.database import async_session_maker
