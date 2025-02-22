@@ -18,7 +18,7 @@ class CommandHandler(BaseHandler):
             "Привет! Я твой Todoist-бот.\nДля начала работы с задачами используйте команды или кнопки внизу.",
             reply_markup=settings.nav_keyboard
         )
-
+ 
     async def help_command(self, message: Message):
         await message.answer(
             "Доступные команды:\n"
