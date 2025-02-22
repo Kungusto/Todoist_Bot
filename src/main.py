@@ -4,10 +4,10 @@ import sys
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command 
-from api.config import commands
-from api.config import token
-from api.Handlers import CommandHandler, ButtonHandler
-from api.Register import Register
+from api.settings import commands
+from api.settings import token
+from api.handlers import CommandHandler, ButtonHandler
+from api.register import Register
 
 logging.basicConfig(level=logging.INFO)
 

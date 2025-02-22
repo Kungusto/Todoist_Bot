@@ -1,4 +1,4 @@
-from api.Handlers import CommandHandler
+from api.handlers import CommandHandler
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 
@@ -11,11 +11,6 @@ nav_keyboard = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text=btn) for btn in row] for row in nav_buttons],
     resize_keyboard=True  # Подгоняет размер под экран
 )
-
-buttons = [
-    func[:-8] for func in dir(CommandHandler)  
-    if callable(getattr(CommandHandler, func)) and func.endswith("_command")
-]
 
 commands = [
     func[:-8] for func in dir(CommandHandler)  

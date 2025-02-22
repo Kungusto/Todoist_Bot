@@ -1,5 +1,5 @@
 from aiogram.types import Message
-from api import config  
+from api import settings  
 
 class BaseHandler:
     def __init__(self, bot, dispatcher):
@@ -16,7 +16,7 @@ class CommandHandler(BaseHandler):
     async def start_command(self, message: Message):  
         await message.answer(
             "Привет! Я твой Todoist-бот.\nДля начала работы с задачами используйте команды или кнопки внизу.",
-            reply_markup=config.nav_keyboard  # Теперь клавиатура подключена правильно
+            reply_markup=settings.nav_keyboard
         )
 
     async def help_command(self, message: Message):

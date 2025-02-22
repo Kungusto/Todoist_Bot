@@ -1,7 +1,7 @@
 from aiogram.filters import Command
 from aiogram import Dispatcher, F
 import logging
-from api.config import commands, buttons  
+from api.settings import commands  
 
 class Register:
     def __init__(self, dp: Dispatcher, handler, button_handler):
@@ -18,7 +18,7 @@ class Register:
     def register_navigation(self):
         """Регистрируем кнопки внизу"""
         self.dp.message.register(self.button_handler.list_tasks, F.text == "📋 Список задач")
-        self.dp.message.register(self.button_handler.add_task, F.text == "➕ Добавить")
+        self.dp.message.register(self.button_handler.add_task, F.text == "➕ Добавить задачу")
         self.dp.message.register(self.button_handler.settings, F.text == "⚙ Настройки")
 
     def register_all(self):
