@@ -13,4 +13,3 @@ class TasksFirstStepOrm(Base) :
     complation_due: Mapped[datetime] = mapped_column(default=datetime.now())
     priority: Mapped[int] = mapped_column(Integer(), nullable=False)
 
-    
