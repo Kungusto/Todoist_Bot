@@ -12,7 +12,7 @@ from src.schemas.tasks_first_step import TaskStepOneAdd
 import asyncio
 
 '''
-Основной принцип работы с репозиторием(моим классом)
+Основной принцип работы с get_db()
 
 пишешь async for db in get_db() : 
     db.*имя таблички*.метод()
