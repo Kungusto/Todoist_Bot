@@ -1,3 +1,10 @@
+# -------- Без этих команд он не видит папку src в импортах
+import sys
+from pathlib import Path 
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+# --------
+
 import asyncio
 import logging
 import sys
