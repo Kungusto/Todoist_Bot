@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from src.database import async_session_maker
 from pydantic import BaseModel
 from sqlalchemy.orm import DeclarativeBase
@@ -48,3 +48,12 @@ class BaseRepository :
         )
         result = await self.session.execute(query)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
+
+    async def edit(self, data: BaseModel, **filter_by) : 
+        edit_stmt = (
+         update(self.model)
+         .filter_by(**filter_by)
+         .values(data.model_dump(exclude_unset=True))   
+        )
+        await self.session.execute(edit_stmt)
+        return {'status':'OK'}

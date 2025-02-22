@@ -7,3 +7,7 @@ class UserAdd(BaseModel) :
 
 class User(UserAdd)  :
     id: int
+
+class UserEdit(BaseModel) : 
+    tg_id: str | None = None
+    registration: date | None = None

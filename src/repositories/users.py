@@ -1,4 +1,4 @@
-from sqlalchemy import select, filter, filter_by
+from sqlalchemy import select
 
 from src.repositories.base import BaseRepository
 from src.models.users import UsersOrm
