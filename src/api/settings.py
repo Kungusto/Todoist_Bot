@@ -8,14 +8,7 @@ nav_buttons = [
     ["📋 Список задач"],  # Одна кнопка в строке
     ["➕ Добавить задачу", "⚙ Настройки"],  # Две кнопки в строке
 ]
-nav_buttons = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text="📋 Список задач", callback_data="list_tasks")],
-        [InlineKeyboardButton(text="➕ Добавить задачу", callback_data="add_task")],
-        [InlineKeyboardButton(text="⚙ Настройки", callback_data="settings")]
-    ]
 
-)
 
 
 nav_keyboard = ReplyKeyboardMarkup(
