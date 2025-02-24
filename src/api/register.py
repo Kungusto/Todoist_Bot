@@ -3,7 +3,7 @@ from aiogram import Dispatcher, F, Router
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
-from src.api import settings
+
 from src.api.settings import commands
 from src.api.UserInputHandler import UserInputHandler
 
@@ -35,6 +35,8 @@ class Register:
 
     async def handle_user_input(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
+        from src.api import settings
+
         print(f"📩 Входящее сообщение: {message.text}")  # Логируем текст сообщения
 
         current_state = await state.get_state()
