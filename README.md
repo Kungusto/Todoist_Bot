@@ -54,5 +54,5 @@ python src/main.py
 После запуска бота введите `/start`, чтобы начать работу.
 
 ## Контакты
-Автор: [Твой GitHub](https://github.com/Kungusto)
+Авторы: [Kungusto](https://github.com/Kungusto) и [DeimosCreator](https://https://github.com/DeimosCreator).
 
