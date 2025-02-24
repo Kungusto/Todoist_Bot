@@ -15,7 +15,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command 
 from api.settings import commands
 from api.settings import token
-from api.handlers import CommandHandler, ButtonHandler
+from api.handlers import CommandHandler, ButtonNavHandler
 from api.register import Register
 
 
@@ -37,7 +37,7 @@ dp = Dispatcher()
 
 handler = CommandHandler(bot, dp)
 
-button_handler = ButtonHandler()  # Создаём экземпляр обработчика кнопок
+button_handler = ButtonNavHandler(bot, dp)  # Создаём экземпляр обработчика кнопок
 register = Register(dp, handler, button_handler)  # Передаём его в register
 register.register_all()
 
