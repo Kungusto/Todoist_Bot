@@ -1,5 +1,6 @@
 from src.database import async_session_maker
 from src.repositories.tasks_first_step import TasksStepOneRepository
+from src.repositories.users import UsersRepository
 
 class DBManager : 
     def __init__(self, session_factory) :
@@ -9,6 +10,7 @@ class DBManager :
         self.session = self.session_factory()
         
         self.tasks_frst_stp = TasksStepOneRepository(self.session)
+        self.users = UsersRepository(self.session)
 
         return self
     
