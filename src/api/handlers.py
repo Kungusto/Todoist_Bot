@@ -1,3 +1,10 @@
+import asyncio
+from aiogram import types, Bot, Dispatcher
+from aiogram.types import Message, CallbackQuery
+from api import settings
+import logging
+
+
 from aiogram.types import Message
 from api import settings  
 
@@ -28,13 +35,31 @@ class CommandHandler(BaseHandler):
             "/tasks - показать все задачи"
         )
 
-class ButtonHandler:
+class CommandHandler(BaseHandler):  
+    def __init__(self, bot, dispatcher):
+        super().__init__(bot, dispatcher)
+
+    async def start_command(self, message: Message):  
+        await message.answer(
+            "Привет! Я твой Todoist-бот.\nДля начала работы с задачами используйте команды или кнопки внизу.",
+            reply_markup=settings.nav_keyboard
+        )
+ 
+    async def help_command(self, message: Message):
+        await message.answer(
+            "Доступные команды:\n"
+            "/start - запуск бота\n"
+            "/help - помощь по боту\n"
+            "/create - создание новой задачи\n"
+            "/tasks - показать все задачи"
+        )
+
+class ButtonNavHandler(BaseHandler):
     async def list_tasks(self, message: Message):
-        await message.answer("📋 Вот ваши задачи: ...")
-    
+        sent_message = await message.answer("📋 Мои задачи", reply_markup=settings.task_keyboard)
+
     async def add_task(self, message: Message):
-        await message.answer("Введите новую задачу:")
-    
+        sent_message = await message.answer("Введите новую задачу:")
+
     async def settings(self, message: Message):
-        await message.answer("⚙ Открываем настройки...")
-        
+        sent_message = await message.answer("⚙ Открываем настройки...")

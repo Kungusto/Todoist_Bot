@@ -7,7 +7,7 @@ class Register:
     def __init__(self, dp: Dispatcher, handler, button_handler):
         self.dp = dp
         self.handler = handler
-        self.button_handler = button_handler  # Добавляем обработчик кнопок
+        self.button_handler = button_handler
 
     def register_commands(self):
         """Регистрирует команды бота."""
