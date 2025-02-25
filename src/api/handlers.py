@@ -1,4 +1,4 @@
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from src.api.UserInputHandler import UserInputHandler
 
@@ -11,7 +11,7 @@ class BaseHandler:
         await self.bot.send_message(chat_id, text)
 
 
-class CommandHandler(BaseHandler):  
+class CommandHandler(BaseHandler):
     def __init__(self, bot, dispatcher):
         super().__init__(bot, dispatcher)
 
@@ -21,7 +21,7 @@ class CommandHandler(BaseHandler):
             "Привет! Я твой Todoist-бот.\nДля начала работы с задачами используйте команды или кнопки внизу.",
             reply_markup=settings.nav_keyboard
         )
- 
+
     async def help_command(self, message: Message):
         await message.answer(
             "Доступные команды:\n"
@@ -45,6 +45,16 @@ class ButtonNavHandler(BaseHandler):
 
     async def settings(self, message: Message):
         await message.answer("⚙ Открываем настройки...")
+
+    async def task_selected(self, callback: CallbackQuery):
+        """Обработчик нажатий на задачи"""
+        from src.api import settings
+        await callback.message.answer(f"Вы выбрали задачу: {callback.data}",
+                                      reply_markup=settings.task_edit_keyboard)
+        await callback.answer()  # Закрываем всплывающее уведомление
+
+class ButtonEditTaskHandler(BaseHandler):
+    pass
 
 
 

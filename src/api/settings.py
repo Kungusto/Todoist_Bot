@@ -32,6 +32,17 @@ task_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[[InlineKeyboardButton(text=task[0], callback_data=task[0])] for task in task_buttons]
 )
 
+task_edit_buttons = [
+    ["Изменить"],
+    ["Добавить описание"],
+    ["Добавить подзадачи"],
+    ["Изменить приоритет"],
+    ["Изменить статус"],
+    ["Изменить время выполнения"],
+]
 
+task_edit_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text=task_edit[0], callback_data=task_edit[0])] for task_edit in task_edit_buttons]
+)
 
 #subtask_keyboard[task_keyboard.long] как-нибудь потом

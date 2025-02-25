@@ -3,7 +3,6 @@ from aiogram import Dispatcher, F, Router
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
-
 from src.api.settings import commands
 from src.api.UserInputHandler import UserInputHandler
 
@@ -29,9 +28,13 @@ class Register:
         self.dp.message.register(self.button_handler.settings, F.text == "⚙ Настройки")
 
     def register_fsm_handler(self):
-        """Регистрирует обработчик пользовательского ввода."""  # Изменено на dp
+        """Регистрирует обработчик пользовательского ввода."""
         self.dp.message.register(self.handle_user_input, UserInputHandler.waiting_for_input)
         print(f"⚡ Регистрируем FSM-хэндлер для {UserInputHandler.waiting_for_input}")
+
+    def register_task_callbacks(self):
+        """Регистрируем обработчик нажатий на задачи."""
+        self.dp.callback_query.register(self.button_handler.task_selected)
 
     async def handle_user_input(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
@@ -67,4 +70,4 @@ class Register:
         self.register_commands()
         self.register_navigation()
         self.register_fsm_handler()
-
+        self.register_task_callbacks()  # Добавляем регистрацию callback-хэндлера
