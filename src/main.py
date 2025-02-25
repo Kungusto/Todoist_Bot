@@ -1,3 +1,12 @@
+# -------- Без этих команд он не видит папку src в импортах
+import sys
+from pathlib import Path 
+
+sys.path.append(str(Path(__file__).parent.parent))
+# --------
+
+from src.config import settings
+
 import asyncio
 import logging
 import sys
@@ -6,17 +15,19 @@ from pathlib import Path
 from aiogram import Bot, Dispatcher, Router
 from api.handlers import CommandHandler, ButtonNavHandler
 from src.api.register import Register
-from api import settings
+#from api import settings
 
-#from src.config import settings
-#убрал импорт т. к. появляются ошибки (скорее всего из-за ненастроенной бд)
+from src.config import settings
+#убрал импорт т. к. появляются ошибки (скорее всего из-за ненастроенной бд), ну ладно так и быть верну
 
 
 sys.path.append(str(Path(__file__).parent.parent))
 
+
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=settings.token) # ща объясню что это
+# bot = Bot(token=token) - сорян( мне так не удобно тестить
+bot = Bot(token=settings.TOKEN) 
 '''
 создаешь файлик .env и пишешь туда(пример) :
     DB_PORT=*порт. обычно 5432 (по умолчанию)*
@@ -27,7 +38,6 @@ bot = Bot(token=settings.token) # ща объясню что это
 
     TOKEN=8090759361:AAGkfIL43EeWm5NJ7CZt3I8C-ReUZktRH_U
 '''
-
 
 dp = Dispatcher()
 router = Router()
