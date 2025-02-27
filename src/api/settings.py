@@ -45,7 +45,7 @@ task_keyboard = InlineKeyboardMarkup(
 
 task_edit_buttons = [
     ["➡ Редактировать 🔄", "edit_task:0"],
-    ["➡ Добавить подзадачи ➕", "add_subtasks:0"],
+    ["➡ Добавить подзадачу ➕", "add_subtasks:0"],
     ["➡ Изменить приоритет 🔥", "change_priority:0"],
     ["➡ Изменить статус ✅", "change_status:0"],
     ["➡ Изменить дедлайн ⏳", "change_deadline:0"],
@@ -58,7 +58,10 @@ task_edit_keyboard = InlineKeyboardMarkup(
     ]
 )
 
-print("task_edit_buttons:", task_edit_buttons)
+subtask_keyboard = [
+    [""],
+]
+
 
 
 

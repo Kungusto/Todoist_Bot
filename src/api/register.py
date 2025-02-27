@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 
 from src.api.settings import commands
-from src.api.UserInputHandler import UserInputHandler
+from src.api.userInputHandler import UserInputHandler
 
 class Register:
     def __init__(self, dp: Dispatcher, router: Router, handler, button_handler, button_edit_task_handler):
@@ -32,6 +32,7 @@ class Register:
         """Регистрирует обработчики пользовательского ввода."""
         self.dp.message.register(self.handle_user_input_task, UserInputHandler.waiting_for_input)
         self.dp.message.register(self.handle_user_input_task_edit, UserInputHandler.waiting_for_edit)
+        self.dp.message.register(self.handle_user_input_subtask, UserInputHandler.waiting_for_subtask)
 
     def register_task(self):
         from src.api import settings
@@ -67,6 +68,13 @@ class Register:
                                         lambda c: c.data.startswith("edit_task:"))
 
         print("Обработчик edit_task_selected зарегистрирован!")  # Проверяем, дошли ли до регистрации
+
+    def register_subtask_callbacks(self):
+        # Регистрация обработчика на кнопки вида edit_task:{index}
+        self.dp.callback_query.register(self.button_edit_task_handler.subtask_seleted,
+                                        lambda c: c.data.startswith("add_subtasks:"))
+
+        print("Обработчик add_subtasks_selected зарегистрирован!")  # Проверяем, дошли ли до регистрации
 
     async def handle_user_input_task(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
@@ -126,6 +134,38 @@ class Register:
         # Очищаем состояние после изменения
         await state.clear()
 
+    async def handle_user_input_subtask(self, message: Message, state: FSMContext):
+        """Обрабатывает ввод пользователя и добавляет подзадачу."""
+        from src.api import settings
+
+        # Проверяем текущее состояние
+        current_state = await state.get_state()
+        if not current_state:
+            await message.answer("⚠ Ошибка: FSM-состояние потеряно!")
+            return
+
+        # Получаем индекс редактируемой задачи
+        user_data = await state.get_data()
+        task_index = user_data.get("subtask_index")
+
+        if task_index is None:
+            await message.answer("⚠ Ошибка: индекс задачи не найден. Попробуйте заново.")
+            return
+
+        user_input = message.text.strip()
+
+        if not user_input:
+            await message.answer("⚠ Пожалуйста, введите текст для изменения задачи!")
+            return
+
+        # Обновляем задачу в списке
+        settings.subtask_keyboard[task_index] = [user_input]
+
+        await message.answer(f"✅ Подзадача обновлена: {user_input}")
+
+        # Очищаем состояние после изменения
+        await state.clear()
+
     def register_all(self):
         """Регистрирует все команды, кнопки и обработчики FSM."""
         print("Вызов register_all()")
@@ -136,4 +176,5 @@ class Register:
         self.register_task()
         self.register_task_edit()
         self.register_task_edit_callbacks()
+
 

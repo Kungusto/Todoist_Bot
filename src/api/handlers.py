@@ -1,6 +1,6 @@
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
-from src.api.UserInputHandler import UserInputHandler
+from src.api.userInputHandler import UserInputHandler
 
 
 class BaseHandler:
@@ -114,5 +114,26 @@ class ButtonEditTaskHandler(BaseHandler):
                 callback.message, state, f"*Что вы хотите изменить в задаче* `{task_name}`\\?", parse_mode="MarkdownV2"
             )
 
-            settings.current_state = 4
+            await callback.answer()
+
+    async def subtask_seleted(self, callback: CallbackQuery, state: FSMContext):
+        from src.api import settings
+
+        if callback.data.startswith("add_subtasks:"):
+            _, task_index = callback.data.split(":")
+            task_index = int(task_index)
+
+            try:
+                task_name = settings.task_buttons[task_index][0]
+            except IndexError:
+                await callback.message.answer("⚠ *Ошибка\\: задача не найдена\\!* Попробуйте снова\\.",
+                                              parse_mode="MarkdownV2")
+                return
+
+            await state.update_data(editing_task_index=task_index)
+
+            await UserInputHandler.get_edit_subtask(
+                callback.message, state, f"*Какую подзадачу вы хотите добавить в задаче* `{task_name}`\\?", parse_mode="MarkdownV2"
+            )
+
             await callback.answer()
