@@ -22,5 +22,5 @@ class UserInputHandler(StatesGroup):
     @staticmethod
     async def get_edit_subtask(message: Message, state: FSMContext, prompt: str, parse_mode: str):
         """Запрашивает ввод от пользователя для редактирования задачи."""
-        await state.set_state(UserInputHandler.waiting_for_edit)
+        await state.set_state(UserInputHandler.waiting_for_subtask)
         await message.answer(prompt, parse_mode=parse_mode)
