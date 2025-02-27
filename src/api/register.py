@@ -91,7 +91,7 @@ class Register:
 
         await state.clear()  # Очищаем состояние
 
-    async def handle_user_input_task_edit(self, message: Message, state: FSMContext, callback_query: CallbackQuery):
+    async def handle_user_input_task_edit(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и изменяет существующую задачу."""
         from src.api import settings
 
