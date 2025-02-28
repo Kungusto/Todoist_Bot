@@ -1,11 +1,10 @@
-from aiogram.filters import Command
 from aiogram import Dispatcher, F, Router
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 
 from src.api.settings import commands
-from src.api.UserInputHandler import UserInputHandler
+from src.api.userInputHandler import UserInputHandler
 
 class Register:
     def __init__(self, dp: Dispatcher, router: Router, handler, button_handler, button_edit_task_handler):
@@ -17,6 +16,7 @@ class Register:
 
     def register_commands(self):
         """Регистрирует команды бота."""
+        from aiogram.filters import Command
         for command in commands:
             method = getattr(self.handler, f"{command}_command", None)
             if method:
@@ -24,6 +24,7 @@ class Register:
 
     def register_navigation(self):
         """Регистрируем кнопки внизу."""
+        from aiogram import F
         self.dp.message.register(self.button_handler.list_tasks, F.text == "📋 Список задач")
         self.dp.message.register(self.button_handler.add_task, F.text == "➕ Добавить задачу")
         self.dp.message.register(self.button_handler.settings, F.text == "⚙ Настройки")
@@ -32,6 +33,7 @@ class Register:
         """Регистрирует обработчики пользовательского ввода."""
         self.dp.message.register(self.handle_user_input_task, UserInputHandler.waiting_for_input)
         self.dp.message.register(self.handle_user_input_task_edit, UserInputHandler.waiting_for_edit)
+        self.dp.message.register(self.handle_user_input_subtask, UserInputHandler.waiting_for_subtask)
 
     def register_task(self):
         from src.api import settings
@@ -47,83 +49,98 @@ class Register:
         self.dp.callback_query.register(self.button_handler.task_selected, lambda c: c.data.startswith("task:"))
 
     def register_task_edit(self):
-        """Регистрируем обработчик редактирования"""
+        """Регистрируем обработчик редактирования."""
         from src.api import settings
 
         print("Регистрируем обработчик редактирования")  # Проверяем, вызывается ли метод
 
         settings.task_edit_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text=btn[0], callback_data=btn[1] if len(btn) > 1 else btn[0])]
+                [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
                 for btn in settings.task_edit_buttons
             ]
         )
 
-        print("Клавиатура редактирования создана:", settings.task_edit_buttons)  # Проверяем кнопки
+        print("Клавиатура редактирования создана:", settings.task_edit_buttons)
 
     def register_task_edit_callbacks(self):
         # Регистрация обработчика на кнопки вида edit_task:{index}
         self.dp.callback_query.register(self.button_edit_task_handler.edit_task_selected,
                                         lambda c: c.data.startswith("edit_task:"))
+        print("Обработчик edit_task_selected зарегистрирован!")
 
-        print("Обработчик edit_task_selected зарегистрирован!")  # Проверяем, дошли ли до регистрации
+    def register_subtask_callbacks(self):
+        # Регистрация обработчика на кнопки вида add_subtasks:{index}
+        self.dp.callback_query.register(self.button_edit_task_handler.subtask_seleted,
+                                        lambda c: c.data.startswith("add_subtasks:"))
+        print("Обработчик add_subtasks_selected зарегистрирован!")
 
     async def handle_user_input_task(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
         from src.api import settings
 
         current_state = await state.get_state()
-
         if not current_state:
             await message.answer("⚠ Ошибка: FSM-состояние потеряно!")
             return
 
-        user_input = message.text  # Получаем текст сообщения
-
+        user_input = message.text
         if not user_input:
             await message.answer("⚠ Пожалуйста, введите задачу!")
             return
 
-        settings.task_buttons.append([user_input])  # Добавляем задачу
+        settings.task_buttons.append([user_input])
         self.register_task()
-
         await message.answer(f"✅ Задача добавлена: {user_input}")
+        await state.clear()
 
-        await state.clear()  # Очищаем состояние
-
-    async def handle_user_input_task_edit(self, message: Message, state: FSMContext, callback_query: CallbackQuery):
+    async def handle_user_input_task_edit(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и изменяет существующую задачу."""
         from src.api import settings
 
-        # Проверяем текущее состояние
         current_state = await state.get_state()
         if not current_state:
             await message.answer("⚠ Ошибка: FSM-состояние потеряно!")
             return
 
-        # Получаем индекс редактируемой задачи
         user_data = await state.get_data()
         task_index = user_data.get("editing_task_index")
-
         if task_index is None:
             await message.answer("⚠ Ошибка: индекс задачи не найден. Попробуйте заново.")
             return
 
-        user_input = message.text.strip()  # Получаем текст нового названия задачи
-
+        user_input = message.text.strip()
         if not user_input:
             await message.answer("⚠ Пожалуйста, введите текст для изменения задачи!")
             return
 
-        # Обновляем задачу в списке
         settings.task_buttons[task_index] = [user_input]
-
-        # Пересоздаём клавиатуру с задачами
         self.register_task()
-
         await message.answer(f"✅ Задача обновлена: {user_input}")
+        await state.clear()
 
-        # Очищаем состояние после изменения
+    async def handle_user_input_subtask(self, message: Message, state: FSMContext):
+        """Обрабатывает ввод пользователя и добавляет подзадачу."""
+        from src.api import settings
+
+        user_data = await state.get_data()
+        task_index = user_data.get("subtask_index")
+        if task_index is None:
+            await message.answer("⚠ Ошибка: индекс задачи не найден. Попробуйте заново.")
+            return
+
+        subtask_text = message.text.strip()
+        if not subtask_text:
+            await message.answer("⚠ Пожалуйста, введите текст для подзадачи!")
+            return
+
+        # Если для задачи ещё не создан список подзадач, создаём его
+        if len(settings.task_buttons[task_index]) == 1:
+            settings.task_buttons[task_index].append([])
+
+        settings.task_buttons[task_index][1].append(subtask_text)
+        self.register_task()
+        await message.answer(f"✅ Подзадача добавлена: {subtask_text}")
         await state.clear()
 
     def register_all(self):
@@ -136,4 +153,4 @@ class Register:
         self.register_task()
         self.register_task_edit()
         self.register_task_edit_callbacks()
-
+        self.register_subtask_callbacks()
