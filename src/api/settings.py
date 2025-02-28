@@ -62,8 +62,21 @@ subtask_keyboard = [
     [""],
 ]
 
+task_priority_edit_buttons = [
+    ["1️⃣ Высокий (🔥 Срочно)", "High", "🔥 Срочно"],
+    ["2️⃣ Средний (⏳ Обычный)", "Medium", "⏳ Обычный"],
+    ["3️⃣ Низкий (✅ Можно подождать)", "Low", "✅ Можно подождать"],
+]
 
+task_priority_edit_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text=btn[0], callback_data=btn[1] if len(btn) > 1 else btn[0])]
+        for btn in task_priority_edit_buttons
+    ]
+)
 
-
+task_priority = [
+    [""]
+]
 #subtask_keyboard[task_keyboard.long] как-нибудь потом
 

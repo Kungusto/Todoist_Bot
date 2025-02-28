@@ -75,6 +75,16 @@ class Register:
                                         lambda c: c.data.startswith("add_subtasks:"))
         print("Обработчик add_subtasks_selected зарегистрирован!")
 
+    def register_task_priority_callbacks(self):
+        self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
+                                        lambda c: c.data.startswith("change_priority:"))
+        self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
+                                        lambda c: c.data.startswith("Low"))
+        self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
+                                        lambda c: c.data.startswith("Medium"))
+        self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
+                                        lambda c: c.data.startswith("High"))
+
     async def handle_user_input_task(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
         from src.api import settings
@@ -154,3 +164,4 @@ class Register:
         self.register_task_edit()
         self.register_task_edit_callbacks()
         self.register_subtask_callbacks()
+        self.register_task_priority_callbacks()

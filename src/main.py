@@ -6,7 +6,7 @@ from pathlib import Path
 from aiogram import Bot, Dispatcher, Router
 from api.handlers import CommandHandler, ButtonNavHandler, ButtonEditTaskHandler
 from src.api.register import Register
-from api import settings
+from src.api import settings
 
 #from src.config import settings
 #убрал импорт т. к. появляются ошибки (скорее всего из-за ненастроенной бд)

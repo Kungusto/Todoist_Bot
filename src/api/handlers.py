@@ -1,5 +1,6 @@
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
+
 from src.api.userInputHandler import UserInputHandler
 
 
@@ -90,9 +91,16 @@ class ButtonNavHandler(BaseHandler):
             subtasks = settings.task_buttons[task_index][1] if len(settings.task_buttons[task_index]) > 1 else []
             formatted_subtasks = "\n".join([f"• {sub}" for sub in subtasks]) if subtasks else "Нет подзадач"
 
+            # Проверяем, есть ли приоритет у задачи
+            if len(settings.task_priority) > task_index and settings.task_priority[task_index][0]:
+                priority = settings.task_priority[task_index]
+            else:
+                priority = "Не установлен"
+
             await callback.message.answer(
                 f"*Вы выбрали задачу\\:*\n"
                 f"`{task_name}`\n\n"
+                f"*Приоритет:* `{priority}`\n\n"
                 f"*Подзадачи:*\n{formatted_subtasks}",
                 reply_markup=settings.task_edit_keyboard,
                 parse_mode="MarkdownV2"
@@ -137,15 +145,75 @@ class ButtonEditTaskHandler(BaseHandler):
 
             try:
                 task_name = settings.task_buttons[task_index][0]
-            except IndexError:
-                await callback.message.answer("⚠ *Ошибка\\: задача не найдена\\!* Попробуйте снова\\.", parse_mode="MarkdownV2")
-                return
+                await callback.message.answer(
+                    f"*Какой приоритет вы хотите поставить в задаче* `{task_name}`\\? ",
+                    reply_markup=settings.task_priority_edit_keyboard,
+                    parse_mode="MarkdownV2"
+                )
+            except Exception as e:
+                print(f"Error while sending message: {e}")
+                await callback.message.answer("⚠ Произошла ошибка при отправке сообщения. Попробуйте позже.")
 
             # Обновляем состояние с отдельным ключом для подзадачи
             await state.update_data(subtask_index=task_index)
 
-            await UserInputHandler.get_edit_subtask(
-                callback.message, state, f"*Какую подзадачу вы хотите добавить в задаче* `{task_name}`\\?", parse_mode="MarkdownV2"
+            await callback.answer()
+
+    async def priority_selected(self, callback: CallbackQuery, state: FSMContext):
+        from src.api import settings
+        print(f"Received callback data: {callback.data}")
+
+        if callback.data.startswith("change_priority:"):
+            _, priority_index = callback.data.split(":")
+            priority_index = int(priority_index)
+
+            try:
+                task_name = settings.task_buttons[priority_index][0]
+            except IndexError:
+                await callback.message.answer("⚠ *Ошибка\\: задача не найдена\\!* Попробуйте снова\\.",
+                                              parse_mode="MarkdownV2")
+                return
+
+            # Сохраняем priority_index в состояние
+            await state.update_data(priority_index=priority_index)
+
+            await callback.message.answer(
+                f"*Какой приоритет вы хотите поставить в задаче* `{task_name}`\\?",
+                reply_markup=settings.task_priority_edit_keyboard,
+                parse_mode="MarkdownV2"
             )
 
             await callback.answer()
+
+        elif callback.data in ["Low", "Medium", "High"]:  # Обрабатываем приоритет
+            global task_priority
+            user_data = await state.get_data()
+            priority_index = user_data.get("priority_index")
+
+            if priority_index is None:
+                await callback.message.answer("⚠ *Ошибка:* задача не найдена. Попробуйте снова.",
+                                              parse_mode="MarkdownV2")
+                return
+
+            try:
+                task_name = settings.task_buttons[priority_index][0]
+            except IndexError:
+                await callback.message.answer("⚠ *Ошибка\\: задача не найдена\\!* Попробуйте снова\\.",
+                                              parse_mode="MarkdownV2")
+                return
+
+            # Устанавливаем новый приоритет
+            task_priority_edit_buttons = settings.task_priority_edit_buttons
+            for priority in task_priority_edit_buttons:
+                if priority[1] == callback.data:
+                    task_priority = priority[2]
+
+            settings.task_priority[priority_index] = task_priority
+
+            await callback.message.answer(
+                f"*Приоритет задачи* `{task_name}` изменен на *{task_priority.replace('(', '\\(').replace(')', '\\)')}*",
+                parse_mode="MarkdownV2"
+            )
+
+            await callback.answer()
+
