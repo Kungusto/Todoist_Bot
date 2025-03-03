@@ -12,8 +12,17 @@ class TasksStepOneRepository(BaseRepository) :
         '''получить задачи, срок которых истекает сегодня'''
         query = (
             select(self.model)
-            .filter_by(user_id=1)
+            .filter_by(user_id=user_id)
             .filter(self.model.complation_due)
+        )
+
+        result = await self.session.execute(query)
+        return result
+    
+    async def get_user_tasks(self, user_id: int) :
+        query = (
+            select(self.model)
+            .filter_by(user_id=user_id)
         )
 
         result = await self.session.execute(query)
