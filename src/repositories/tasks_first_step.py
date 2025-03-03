@@ -18,12 +18,3 @@ class TasksStepOneRepository(BaseRepository) :
 
         result = await self.session.execute(query)
         return result
-    
-    async def get_user_tasks(self, user_id: int) :
-        query = (
-            select(self.model)
-            .filter_by(user_id=user_id)
-        )
-
-        result = await self.session.execute(query)
-        return result
