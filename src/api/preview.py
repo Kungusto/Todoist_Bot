@@ -8,7 +8,6 @@ env_path = Path(__file__).resolve().parent.parent / ".env"  # Пример с п
 # Загружаем .env файл
 from dotenv import load_dotenv
 load_dotenv(env_path)
-print("Путь к .env:", env_path)
 
 # --------
 

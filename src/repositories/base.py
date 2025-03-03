@@ -36,7 +36,7 @@ class BaseRepository :
         
     async def get_filtered(self, *filter, **filter_by) :
         '''
-        Получить данные с фильтрами. Аргменты: 
+        Получить данные с фильтрами. Аргументы:
         1. **filter_by работает когда мы вызываем: get_filtered(user_id=1) 
         в этом случае мы получим всех юзеров с первым айдишником
         2. *filter принимает более сложные условия. скорей всего тебе не поднадобиться
@@ -49,11 +49,25 @@ class BaseRepository :
         result = await self.session.execute(query)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
-    async def edit(self, data: BaseModel, **filter_by) : 
-        edit_stmt = (
-         update(self.model)
-         .filter_by(**filter_by)
-         .values(data.model_dump(exclude_unset=True))   
-        )
-        await self.session.execute(edit_stmt)
-        return {'status':'OK'}
+    async def edit(self, data: BaseModel, **filter_by) :
+        # Проверка существования записи по filter_by
+        query = select(self.model).filter_by(**filter_by)
+        result = await self.session.execute(query)
+        existing_record = result.scalars().first()
+
+        if existing_record:
+            # Если запись существует, обновляем её
+            edit_stmt = (
+                update(self.model)
+                .filter_by(**filter_by)
+                .values(data.model_dump(exclude_unset=True))
+            )
+            await self.session.execute(edit_stmt)
+            return {'status': 'updated'}
+
+        else:
+            # Если записи нет, добавляем новую
+            add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
+            query = await self.session.execute(add_stmt)
+            result = query.scalars().first()
+            return {'status': 'added', 'data': self.schema.model_validate(result, from_attributes=True)}
