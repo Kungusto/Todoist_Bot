@@ -52,27 +52,15 @@ class BaseRepository :
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
     async def edit(self, data: BaseModel, **filter_by) :
-        # Проверка существования записи по filter_by
-        query = select(self.model).filter_by(**filter_by)
-        result = await self.session.execute(query)
-        existing_record = result.scalars().first()
+        update_stmt = (
+            update(self.model)
+            .filter_by(**filter_by)
+            .values(**data.model_dump(exclude_unset=True))
+            .returning(self.model)
+        )
+        result = await self.session.execute(update_stmt)
+        return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
-        if existing_record:
-            # Если запись существует, обновляем её
-            edit_stmt = (
-                update(self.model)
-                .filter_by(**filter_by)
-                .values(data.model_dump(exclude_unset=True))
-            )
-            await self.session.execute(edit_stmt)
-            return {'status': 'updated'}
-
-        else:
-            # Если записи нет, добавляем новую
-            add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
-            query = await self.session.execute(add_stmt)
-            result = query.scalars().first()
-            return {'status': 'added', 'data': self.schema.model_validate(result, from_attributes=True)}
 
     async def delete_filtered(self, *filter, **filter_by):
         """
