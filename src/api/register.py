@@ -1,9 +1,9 @@
-from aiogram import Dispatcher, F, Router
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram import Dispatcher, Router
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
 
-from src.api.settings import commands
+from src.api.setup import commands
 from src.api.userInputHandler import UserInputHandler
 
 class Register:
@@ -36,11 +36,11 @@ class Register:
         self.dp.message.register(self.handle_user_input_subtask, UserInputHandler.waiting_for_subtask)
 
     def register_task(self):
-        from src.api import settings
-        settings.task_keyboard = InlineKeyboardMarkup(
+        from src.api import setup
+        setup.task_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text=task[0], callback_data=f"task:{index}")]
-                for index, task in enumerate(settings.task_buttons)
+                for index, task in enumerate(setup.task_buttons)
             ]
         )
 
@@ -50,18 +50,18 @@ class Register:
 
     def register_task_edit(self):
         """Регистрируем обработчик редактирования."""
-        from src.api import settings
+        from src.api import setup
 
         print("Регистрируем обработчик редактирования")  # Проверяем, вызывается ли метод
 
-        settings.task_edit_keyboard = InlineKeyboardMarkup(
+        setup.task_edit_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
-                for btn in settings.task_edit_buttons
+                for btn in setup.task_edit_buttons
             ]
         )
 
-        print("Клавиатура редактирования создана:", settings.task_edit_buttons)
+        print("Клавиатура редактирования создана:", setup.task_edit_buttons)
 
     def register_task_edit_callbacks(self):
         # Регистрация обработчика на кнопки вида edit_task:{index}
@@ -71,13 +71,23 @@ class Register:
 
     def register_subtask_callbacks(self):
         # Регистрация обработчика на кнопки вида add_subtasks:{index}
-        self.dp.callback_query.register(self.button_edit_task_handler.subtask_seleted,
+        self.dp.callback_query.register(self.button_edit_task_handler.subtask_selected,
                                         lambda c: c.data.startswith("add_subtasks:"))
         print("Обработчик add_subtasks_selected зарегистрирован!")
 
+    def register_task_priority_callbacks(self):
+        self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
+                                        lambda c: c.data.startswith("change_priority:"))
+        self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
+                                        lambda c: c.data.startswith("Low"))
+        self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
+                                        lambda c: c.data.startswith("Medium"))
+        self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
+                                        lambda c: c.data.startswith("High"))
+
     async def handle_user_input_task(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
-        from src.api import settings
+        from src.api import setup
 
         current_state = await state.get_state()
         if not current_state:
@@ -89,14 +99,15 @@ class Register:
             await message.answer("⚠ Пожалуйста, введите задачу!")
             return
 
-        settings.task_buttons.append([user_input])
+        setup.task_buttons.append([user_input])
+
         self.register_task()
         await message.answer(f"✅ Задача добавлена: {user_input}")
         await state.clear()
 
     async def handle_user_input_task_edit(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и изменяет существующую задачу."""
-        from src.api import settings
+        from src.api import setup
 
         current_state = await state.get_state()
         if not current_state:
@@ -114,14 +125,14 @@ class Register:
             await message.answer("⚠ Пожалуйста, введите текст для изменения задачи!")
             return
 
-        settings.task_buttons[task_index] = [user_input]
+        setup.task_buttons[task_index] = [user_input]
         self.register_task()
         await message.answer(f"✅ Задача обновлена: {user_input}")
         await state.clear()
 
     async def handle_user_input_subtask(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет подзадачу."""
-        from src.api import settings
+        from src.api import setup
 
         user_data = await state.get_data()
         task_index = user_data.get("subtask_index")
@@ -135,10 +146,10 @@ class Register:
             return
 
         # Если для задачи ещё не создан список подзадач, создаём его
-        if len(settings.task_buttons[task_index]) == 1:
-            settings.task_buttons[task_index].append([])
+        if len(setup.task_buttons[task_index]) == 1:
+            setup.task_buttons[task_index].append([])
 
-        settings.task_buttons[task_index][1].append(subtask_text)
+        setup.task_buttons[task_index][1].append(subtask_text)
         self.register_task()
         await message.answer(f"✅ Подзадача добавлена: {subtask_text}")
         await state.clear()
@@ -154,3 +165,4 @@ class Register:
         self.register_task_edit()
         self.register_task_edit_callbacks()
         self.register_subtask_callbacks()
+        self.register_task_priority_callbacks()

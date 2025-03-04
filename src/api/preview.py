@@ -1,8 +1,14 @@
 # -------- Без этих команд он не видит папку src в импортах (потом закомментить. он также есть и в main.py). при тестах не комментить
 import sys
-from pathlib import Path 
+from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent.parent))
+# Путь к .env файлу
+env_path = Path(__file__).resolve().parent.parent / ".env"  # Пример с переходом на два уровня выше
+
+# Загружаем .env файл
+from dotenv import load_dotenv
+load_dotenv(env_path)
+
 # --------
 
 from src.utils.init_dbmanager import get_db
@@ -11,7 +17,6 @@ from src.schemas.tasks_first_step import TaskStepOneAdd
 from src.schemas.users import UserEdit
 
 import asyncio
-
 '''
 Основной принцип работы с get_db()
 
@@ -38,14 +43,14 @@ import asyncio
 # ----------------------------------------------------- ПРИМЕРЫ ------------------------------------------------------ #
 
 ## Самый легкий метод get_all()
-async def get_all_tasks() : 
+async def get_all_tasks() :
     '''Получить все текущие задачи'''
     async for db in get_db() : # так во всех функциях
         result = await db.tasks_frst_stp.get_all()
         print(result)
         return result
 
-# asyncio.run(get_all_tasks()) 
+#asyncio.run(get_all_tasks())
 
 
 # ----------------------------------------------------------------

@@ -1,7 +1,8 @@
 from pydantic import BaseModel, conint
 from datetime import datetime
 
-class TaskStepOneAdd(BaseModel) : 
+class TaskStepOneAdd(BaseModel) :
+    user_id: int  # Добавляем user_id
     title : str
     description : str | None = None
     complation_due : datetime
