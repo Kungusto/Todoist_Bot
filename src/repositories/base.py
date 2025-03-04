@@ -51,19 +51,15 @@ class BaseRepository :
         result = await self.session.execute(query)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
-    async def edit(self, data: BaseModel, **filter_by):
-        edit_stmt = (
+    async def edit(self, data: BaseModel, **filter_by) :
+        update_stmt = (
             update(self.model)
             .filter_by(**filter_by)
-            .values(data.model_dump(exclude_unset=True))
+            .values(**data.model_dump(exclude_unset=True))
             .returning(self.model)
         )
-        query = await self.session.execute(edit_stmt)
-        result = query.scalars().first()
-
-        if result:
-            return {'status': 'updated', 'data': self.schema.model_validate(result, from_attributes=True)}
-        return {'status': 'not_found'}
+        result = await self.session.execute(update_stmt)
+        return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
     async def delete_filtered(self, *filter, **filter_by):
         """
