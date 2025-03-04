@@ -31,14 +31,13 @@ async def AddTasksIfNotExist():
     from src.api import setup
     global user_id
     async for db in get_db():
-        # Удаляем все задачи пользователя
-        await db.tasks_frst_stp.delete_filtered(user_id=user_id)
-        await db.commit()
-        print("Удалены все предыдущие задачи пользователя.")
+        # Получаем существующие задачи пользователя
+        existing_tasks = await db.tasks_frst_stp.get_filtered(user_id=user_id)
+        existing_titles = {task.title for task in existing_tasks}  # Множество с заголовками существующих задач
 
-        # Создаём новые задачи
         tasks_to_add = []
-        next_id = 1  # Начинаем нумерацию с 1
+        tasks_to_update = []
+
         for task_data in setup.task_buttons:
             title, _, priority, _, due_date_str = task_data
 
@@ -48,25 +47,42 @@ async def AddTasksIfNotExist():
                 print(f"Ошибка преобразования даты ({due_date_str}):", e)
                 continue
 
-            new_task = TaskStepOneAdd(
-                user_id=user_id,
-                title=title,
-                description=None,
-                complation_due=complation_due,
-                priority=priority
-            )
+            # Если задача с таким названием уже существует, будем обновлять её
+            if title in existing_titles:
+                existing_task = next(task for task in existing_tasks if task.title == title)
+                updated_task = TaskStepOneEdit(
+                    title=title,
+                    description=None,
+                    complation_due=complation_due,
+                    priority=priority
+                )
+                await db.tasks_frst_stp.edit(updated_task, id=existing_task.id)
+                tasks_to_update.append(title)
+            else:
+                # Иначе добавляем новую задачу
+                new_task = TaskStepOneAdd(
+                    user_id=user_id,
+                    title=title,
+                    description=None,
+                    complation_due=complation_due,
+                    priority=priority
+                )
+                tasks_to_add.append(new_task)
 
-            tasks_to_add.append(new_task)
-            next_id += 1  # Увеличиваем ID
-
+        # Если есть новые задачи для добавления
         if tasks_to_add:
             for task in tasks_to_add:
                 await db.tasks_frst_stp.add(task)  # Добавляем каждую задачу
             await db.commit()
             print("Добавлены новые задачи:", [task.title for task in tasks_to_add])
-        else:
-            print("Нет новых задач для добавления.")
 
+        # Если есть обновленные задачи
+        if tasks_to_update:
+            await db.commit()
+            print("Обновлены задачи:", tasks_to_update)
+
+        if not tasks_to_add and not tasks_to_update:
+            print("Нет новых задач для добавления или обновления.")
 
 # Функция для обновления задач
 async def EditTaskData():
