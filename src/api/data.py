@@ -1,6 +1,6 @@
 ﻿import asyncio
 from datetime import datetime
-from src.schemas.tasks_first_step import TaskStepOne, TaskStepOneEdit
+from src.schemas.tasks_first_step import TaskStepOne, TaskStepOneEdit, TaskStepOneAdd
 from src.utils.init_dbmanager import get_db
 
 user_id = 1
@@ -48,8 +48,7 @@ async def AddTasksIfNotExist():
                 print(f"Ошибка преобразования даты ({due_date_str}):", e)
                 continue
 
-            new_task = TaskStepOne(
-                id=next_id,
+            new_task = TaskStepOneAdd(
                 user_id=user_id,
                 title=title,
                 description=None,
