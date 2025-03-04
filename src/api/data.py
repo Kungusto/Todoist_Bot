@@ -1,6 +1,6 @@
 ﻿import asyncio
 from datetime import datetime
-from src.schemas.tasks_first_step import TaskStepOne
+from src.schemas.tasks_first_step import TaskStepOne, TaskStepOneEdit
 from src.utils.init_dbmanager import get_db
 
 user_id = 1
@@ -8,103 +8,112 @@ user_id = 1
 # Функция для получения задач и сохранения их в глобальной переменной setup.task_buttons
 async def GetTask():
     from src.api import setup
-    global user_id
-    user_id = user_id
     async for db in get_db():
         result = await db.tasks_frst_stp.get_filtered(user_id=user_id)
-        tasks_dict = []  # Объявляем tasks_dict сразу
+        tasks_dict = []
 
         if result:
-            for task_index, task in enumerate(result):
+            for task in result:
                 task_data = [
-                    task.title,                             # Название задачи
-                    [],                                     # Подзадачи (оставляем пустым)
-                    task.priority,                          # Приоритет
-                    [],                                     # Статус (оставляем пустым)
-                    task.complation_due.strftime("%Y-%m-%d")  # Дата завершения
+                    task.title,
+                    [],
+                    task.priority,
+                    [],
+                    task.complation_due.strftime("%Y-%m-%d")
                 ]
                 tasks_dict.append(task_data)
-        else:
-            tasks_dict = []
 
-        setup.task_buttons = tasks_dict  # Теперь это глобальная переменная
+        setup.task_buttons = tasks_dict
         print("Загруженные задачи:", setup.task_buttons)
 
-# Функция для добавления новой задачи (если её нет)
-async def AddTaskIfNotExist():
+# Функция для добавления новых задач, если их нет
+async def AddTasksIfNotExist():
     from src.api import setup
+    global user_id
     async for db in get_db():
-        result = await db.tasks_frst_stp.get_filtered(user_id=user_id)
-        if not result:
-            # Получаем последний ID
-            last_task = await db.tasks_frst_stp.get_filtered(user_id=user_id)
-            new_id = (max([task.id for task in last_task], default=0) + 1) if last_task else 1
+        # Удаляем все задачи пользователя
+        await db.tasks_frst_stp.delete_filtered(user_id=user_id)
+        await db.commit()
+        print("Удалены все предыдущие задачи пользователя.")
+
+        # Создаём новые задачи
+        tasks_to_add = []
+        next_id = 1  # Начинаем нумерацию с 1
+        for task_data in setup.task_buttons:
+            title, _, priority, _, due_date_str = task_data
+
+            try:
+                complation_due = datetime.strptime(due_date_str, "%Y-%m-%d")
+            except ValueError as e:
+                print(f"Ошибка преобразования даты ({due_date_str}):", e)
+                continue
 
             new_task = TaskStepOne(
-                id=new_id,  # Добавляем id, если он не должен передаваться вручную
+                id=next_id,
                 user_id=user_id,
-                title="Полить цветы",
-                description="Описание для полить цветы",
-                complation_due=datetime(2025, 3, 10, 14, 0),
-                priority=1
+                title=title,
+                description=None,
+                complation_due=complation_due,
+                priority=priority
             )
 
-            print(f"user_id перед вставкой: {user_id}")  # Выведет 1 или None?
-            await db.tasks_frst_stp.add(new_task)
+            tasks_to_add.append(new_task)
+            next_id += 1  # Увеличиваем ID
+
+        if tasks_to_add:
+            for task in tasks_to_add:
+                await db.tasks_frst_stp.add(task)  # Добавляем каждую задачу
             await db.commit()
-            print("Новая задача добавлена.")
+            print("Добавлены новые задачи:", [task.title for task in tasks_to_add])
+        else:
+            print("Нет новых задач для добавления.")
+
 
 # Функция для обновления задач
 async def EditTaskData():
     from src.api import setup
     async for db in get_db():
-        result = await db.tasks_frst_stp.get_filtered(user_id=user_id)
-        if not result:
+        existing_tasks = await db.tasks_frst_stp.get_filtered(user_id=user_id)
+        if not existing_tasks:
             print("Нет задач для обновления.")
             return
 
-        # Загружаем актуальные задачи в глобальную переменную
         await GetTask()
         if not setup.task_buttons:
             print("Глобальная переменная task_buttons пуста.")
             return
 
-        # Берем новые данные для обновления из первой записи глобального списка
-        new_task_data = setup.task_buttons[0]
-        title = new_task_data[0]
-        description = None
-        priority = new_task_data[2]
-        due_date_str = new_task_data[4]
-        try:
-            complation_due = datetime.strptime(due_date_str, "%Y-%m-%d")
-        except Exception as e:
-            print("Ошибка преобразования даты:", e)
-            return
+        updated_tasks = []
+        for task_data in setup.task_buttons:
+            title, _, priority, _, due_date_str = task_data
+            try:
+                complation_due = datetime.strptime(due_date_str, "%Y-%m-%d")
+            except ValueError as e:
+                print(f"Ошибка преобразования даты ({due_date_str}):", e)
+                continue
 
-        print("Новые данные для обновления:", title, priority, complation_due)
+            for task in existing_tasks:
+                if task.title == title:
+                    updated_task = TaskStepOneEdit(
+                        title=title,
+                        description=None,
+                        complation_due=complation_due,
+                        priority=priority
+                    )
+                    await db.tasks_frst_stp.edit(updated_task, id=task.id)
+                    updated_tasks.append(title)
+                    break
 
-        # Проходим по каждой задаче и обновляем её данные
-        for task in result:
-            # Создаем новый объект TaskStepOne с новыми данными
-            task_data_to_edit = TaskStepOne(
-                title=title,
-                description=description,
-                complation_due=complation_due,
-                priority=priority
-            )
-            if task.id:
-                await db.tasks_frst_stp.edit(task_data_to_edit, id=task.id)
-            else:
-                await db.tasks_frst_stp.add(task_data_to_edit)
-        await db.commit()
-        print(f"Все задачи для пользователя {user_id} обновлены.")
-        await GetTask()  # Обновляем глобальные данные
+        if updated_tasks:
+            await db.commit()
+            print("Обновлены задачи:", updated_tasks)
+        else:
+            print("Нет задач для обновления.")
+
+        await GetTask()
 
 async def main():
-    from src.api import setup
-    # Сначала проверяем, есть ли задачи. Если нет – добавляем новую.
-    await AddTaskIfNotExist()
-    # Затем обновляем задачи.
+    await AddTasksIfNotExist()
     await EditTaskData()
 
 if __name__ == "__main__":

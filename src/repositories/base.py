@@ -2,6 +2,7 @@ from sqlalchemy import insert, select, update
 from src.database import async_session_maker
 from pydantic import BaseModel
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import delete
 
 from pydantic import BaseModel
 
@@ -29,6 +30,7 @@ class BaseRepository :
         Принимает на вход pydantic-схему(ту, в которой айди не указан!), 
         записывает данные в новый столбец
         '''
+        print(data.model_dump())
         add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         query = await self.session.execute(add_stmt)
         result = query.scalars().first()
@@ -71,3 +73,11 @@ class BaseRepository :
             query = await self.session.execute(add_stmt)
             result = query.scalars().first()
             return {'status': 'added', 'data': self.schema.model_validate(result, from_attributes=True)}
+
+    async def delete_filtered(self, *filter, **filter_by):
+        """
+        Удаляет записи с указанными фильтрами.
+        Пример использования: await repo.delete_filtered(user_id=1)
+        """
+        delete_stmt = delete(self.model).filter(*filter).filter_by(**filter_by)
+        await self.session.execute(delete_stmt)
