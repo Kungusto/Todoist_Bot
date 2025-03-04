@@ -61,6 +61,7 @@ class BaseRepository :
         result = await self.session.execute(update_stmt)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
+
     async def delete_filtered(self, *filter, **filter_by):
         """
         Удаляет записи с указанными фильтрами.

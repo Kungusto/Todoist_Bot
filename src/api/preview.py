@@ -4,16 +4,16 @@ from pathlib import Path
 
 # Путь к .env файлу
 env_path = Path(__file__).resolve().parent.parent / ".env"  # Пример с переходом на два уровня выше
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Загружаем .env файл
 from dotenv import load_dotenv
 load_dotenv(env_path)
 
 # --------
-
 from src.utils.init_dbmanager import get_db
 from src.database import async_session_maker
-from src.schemas.tasks_first_step import TaskStepOneAdd
+from src.schemas.tasks_first_step import TaskStepOneAdd, TaskStepOneEdit
 from src.schemas.users import UserEdit
 
 import asyncio
@@ -81,9 +81,9 @@ async def get_user_tasks(user_id: int) :
 
 ## Пример метода edit()
 async def edit_user(data, *filter, **filter_by) : 
-    '''Изменить уже имеющуюся табличку'''
+    '''Изменить уже имеющуюся строчку'''
     async for db in get_db() :
-        result = await db.users.edit(data, *filter, **filter_by)
+        result = await db.users.edit(data, **filter_by)
         print(result)
         await db.commit()
         return result
@@ -91,3 +91,13 @@ async def edit_user(data, *filter, **filter_by) :
 # data_to_edit = UserEdit(tg_id='123456789') # создаем Pydantic-схему
 # asyncio.run(edit_user(data_to_edit, id=1)) # изменить данные в строчке пользователя с айдишником 1 
 
+async def edit_tasks(data, **filter_by) :
+    '''изменить существующую задачу'''
+    async for db in get_db() :
+        result = await db.tasks_frst_stp.edit(data, **filter_by)
+        print(result)
+        await db.commit()
+        return result
+    
+data_to_edit = TaskStepOneEdit(title='Хуйня задача')
+asyncio.run(edit_tasks(data_to_edit, id=1))
