@@ -1,9 +1,10 @@
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
+from typer.cli import callback
 
 from src.api.userInputHandler import UserInputHandler
 
-
+from src.api.data import *
 class BaseHandler:
     def __init__(self, bot, dispatcher):
         self.bot = bot
@@ -20,14 +21,9 @@ class CommandHandler(BaseHandler):
     async def start_command(self, message: Message):
         from src.api import setup, data
         setup.current_state = 1
-        await message.answer(
-            "**Привет\\!** Я твой *Todoist\\-бот*\\.\n"
-            "Для начала работы с задачами используйте команды или кнопки внизу\\.",
-            reply_markup=setup.nav_keyboard,
-            parse_mode="MarkdownV2"
-        )
-        data.user_id = message.from_user.id
-        await data.GetTask()
+        setup.user_id = str(message.from_user.id)
+        auth = Auth()
+        await auth.first(message)
 
     async def help_command(self, message: Message):
         await message.answer(
@@ -38,7 +34,6 @@ class CommandHandler(BaseHandler):
             "`/tasks` \\- показать все задачи",
             parse_mode="MarkdownV2"
         )
-
 
 class ButtonNavHandler(BaseHandler):
     async def list_tasks(self, message: Message):
@@ -52,10 +47,12 @@ class ButtonNavHandler(BaseHandler):
 
     async def add_task(self, message: Message, state: FSMContext):
         """Запрашивает у пользователя задачу и ждёт её ввод."""
-        await UserInputHandler.get_user_input(message, state, "*Введите новую задачу\\:*", parse_mode="MarkdownV2")
+        await state.set_state(UserInputHandler.waiting_for_input)
+        await message.answer("*Введите новую задачу\\:*", parse_mode="MarkdownV2")
 
     async def settings(self, message: Message):
-        await message.answer("⚙ *Открываем настройки\\.\\.\\.*", parse_mode="MarkdownV2")
+        await message.answer("⚙ *Настройки\\.\\.\\.*", parse_mode="MarkdownV2")
+
 
     async def task_selected(self, callback: CallbackQuery, state: FSMContext):
         """Обработчик нажатий на задачу из списка."""
@@ -113,6 +110,91 @@ class ButtonNavHandler(BaseHandler):
             setup.current_state = 3
             await callback.answer()
 
+
+class Auth:
+    async def first(self, message: Message):
+        from src.api import setup
+        try:
+            user = await get_user_by_tg_id()
+            setup.nickname = user.nickname
+            setup.password = user.password
+            await message.answer(f"С возвращением, {user.nickname}!", reply_markup=setup.nav_keyboard)
+        except UserNotFoundError:
+            await message.answer(
+                "**Привет!** Я твой *Todoist-бот*.\nДля начала работы нужно войти или зарегистрироваться.",
+                reply_markup=setup.auth_keyboard
+            )
+
+    async def enter(self, callback: CallbackQuery, state: FSMContext):
+        """Запрашивает логин пользователя для входа."""
+        await callback.message.answer("Введите ваш логин:")
+        await state.set_state(UserInputHandler.waiting_for_enter)
+        await callback.answer()
+
+    async def process_enter(self, message: Message, state: FSMContext):
+        """Обрабатывает логин пользователя и запрашивает пароль."""
+        from src.api import setup
+        try:
+            users = await get_user_by_nickname(message.text)
+            global user
+            for u in users:
+                if u.tg_id == setup.user_id: user = u.nickname
+            if not user:
+                await message.answer("❌ Пользователь не найден. Попробуйте снова или зарегистрируйтесь.")
+                return
+            await state.update_data(nickname=message.text)
+            await message.answer("Введите ваш пароль:")
+            await state.set_state(UserInputHandler.waiting_for_enter_password)
+        except UserNotFoundError:
+            await callback.message.answer("❌ Пользователь не найден. Попробуйте снова или зарегистрируйтесь.")
+
+    async def process_enter_password(self, callback: CallbackQuery, state: FSMContext):
+        """Проверяет введённый пароль и входит в систему."""
+        from src.api import setup
+
+        user_data = await state.get_data()
+        try:
+            user = await get_user_by_nickname(user_data['nickname'])
+
+            if user.password == callback.message.text:
+                setup.nickname = user.nickname
+                setup.password = user.password
+                setup.user_id = str(user.tg_id)
+
+                await set_user()
+                await callback.message.answer(f"✅ Успешный вход! Привет, {user.nickname}.", reply_markup=setup.nav_keyboard)
+                await state.clear()
+            else:
+                await callback.message.answer("❌ Неверный пароль. Попробуйте снова.")
+        except UserNotFoundError:
+            await callback.message.answer("❌ Ошибка: Пользователь не найден.")
+
+    async def register(self, callback: CallbackQuery, state: FSMContext):
+        """Начинает процесс регистрации."""
+        await callback.message.answer("Введите желаемый логин:")
+        await state.set_state(UserInputHandler.waiting_for_reg)
+        await callback.answer()
+
+    async def process_register(self, message: Message, state: FSMContext):
+        """Переходит к вводу пароля."""
+        await state.update_data(nickname=message.text)
+        await message.answer("Введите пароль:")
+        await state.set_state(UserInputHandler.waiting_for_reg_password)
+
+    async def process_register_password(self, message: Message, state: FSMContext):
+        """Сохраняет пользователя и завершает регистрацию."""
+        user_data = await state.get_data()
+        from src.api import setup
+
+        setup.nickname = user_data['nickname']
+        setup.password = message.text
+        setup.user_id = str(message.from_user.id)
+
+        await set_user()  # Сохранение в базу
+
+        await message.answer("✅ Вы успешно зарегистрированы и автоматически вошли в систему!",
+                             reply_markup=setup.nav_keyboard)
+        await state.clear()
 
 class ButtonEditTaskHandler(BaseHandler):
     async def edit_task_selected(self, callback: CallbackQuery, state: FSMContext):
@@ -235,3 +317,26 @@ class ButtonEditTaskHandler(BaseHandler):
 
             await callback.answer()
 
+    async def deadline_selected(self, callback: CallbackQuery, state: FSMContext):
+        from src.api import setup
+        if callback.data.startswith("change_deadline:"):
+            _, deadline_index = callback.data.split(":")
+            deadline_index = int(deadline_index)
+
+            try:
+                task_name = setup.task_buttons[deadline_index][0]
+            except IndexError:
+                await callback.message.answer("⚠ *Ошибка\\: задача не найдена\\!* Попробуйте снова\\.",
+                                              parse_mode="MarkdownV2")
+                return
+
+            await state.update_data(deadline_index=deadline_index)
+
+            await state.set_state(UserInputHandler.waiting_for_deadline)
+
+            await callback.message.answer(
+                f"*Когда вы хотите завершить задачу* {task_name}\\:",
+                parse_mode="MarkdownV2"
+            )
+
+            await callback.answer()

@@ -1,18 +1,19 @@
 from aiogram import Dispatcher, Router
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
-
+from datetime import datetime
 
 from src.api.setup import commands
 from src.api.userInputHandler import UserInputHandler
 
 class Register:
-    def __init__(self, dp: Dispatcher, router: Router, handler, button_handler, button_edit_task_handler):
+    def __init__(self, dp: Dispatcher, router: Router, handler, button_handler, button_edit_task_handler, auth):
         self.dp = dp
         self.handler = handler
         self.button_handler = button_handler
         self.router = router
         self.button_edit_task_handler = button_edit_task_handler
+        self.auth = auth
 
     def register_commands(self):
         """Регистрирует команды бота."""
@@ -31,9 +32,15 @@ class Register:
 
     def register_fsm_handler(self):
         """Регистрирует обработчики пользовательского ввода."""
+        self.dp.message.register(self.auth.process_enter, UserInputHandler.waiting_for_enter)
+        self.dp.message.register(self.auth.process_enter_password, UserInputHandler.waiting_for_enter_password)
+        self.dp.message.register(self.auth.process_register, UserInputHandler.waiting_for_reg)
+        self.dp.message.register(self.auth.process_register_password, UserInputHandler.waiting_for_reg_password)
+
         self.dp.message.register(self.handle_user_input_task, UserInputHandler.waiting_for_input)
         self.dp.message.register(self.handle_user_input_task_edit, UserInputHandler.waiting_for_edit)
         self.dp.message.register(self.handle_user_input_subtask, UserInputHandler.waiting_for_subtask)
+        self.dp.message.register(self.handle_user_input_deadline, UserInputHandler.waiting_for_deadline)
 
     def register_task(self):
         from src.api import setup
@@ -43,6 +50,31 @@ class Register:
                 for index, task in enumerate(setup.task_buttons)
             ]
         )
+
+    def register_settings(self):
+        from src.api import setup
+        setup.settings_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=btn[0], callback_data=btn[1] if len(btn) > 1 else btn[0])]
+                for btn in setup.task_priority_edit_buttons
+            ]
+        )
+
+    def register_settings_callbacks(self):
+        pass
+
+    def register_auth(self):
+        from src.api import setup
+        setup.auth_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+                for btn in setup.auth_button
+            ]
+        )
+
+    def register_auth_callbacks(self):
+        self.dp.callback_query.register(self.auth.enter, lambda c: c.data.startswith("enter"))
+        self.dp.callback_query.register(self.auth.register, lambda c: c.data.startswith("register"))
 
     def register_task_callbacks(self):
         """Регистрируем обработчик нажатий на задачи."""
@@ -61,19 +93,15 @@ class Register:
             ]
         )
 
-        print("Клавиатура редактирования создана:", setup.task_edit_buttons)
-
     def register_task_edit_callbacks(self):
         # Регистрация обработчика на кнопки вида edit_task:{index}
         self.dp.callback_query.register(self.button_edit_task_handler.edit_task_selected,
                                         lambda c: c.data.startswith("edit_task:"))
-        print("Обработчик edit_task_selected зарегистрирован!")
 
     def register_subtask_callbacks(self):
         # Регистрация обработчика на кнопки вида add_subtasks:{index}
         self.dp.callback_query.register(self.button_edit_task_handler.subtask_selected,
                                         lambda c: c.data.startswith("add_subtasks:"))
-        print("Обработчик add_subtasks_selected зарегистрирован!")
 
     def register_task_priority_callbacks(self):
         self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
@@ -84,6 +112,10 @@ class Register:
                                         lambda c: c.data.startswith("Medium"))
         self.dp.callback_query.register(self.button_edit_task_handler.priority_selected,
                                         lambda c: c.data.startswith("High"))
+
+    def register_task_deadline_callbacks(self):
+        self.dp.callback_query.register(self.button_edit_task_handler.deadline_selected,
+                                        lambda c: c.data.startswith("change_deadline:"))
 
     async def handle_user_input_task(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
@@ -154,6 +186,38 @@ class Register:
         await message.answer(f"✅ Подзадача добавлена: {subtask_text}")
         await state.clear()
 
+    async def handle_user_input_deadline(self, message: Message, state: FSMContext):
+        """Обрабатывает ввод пользователя и добавляет дедлайн."""
+        from src.api import setup
+        from src.api.ai import AI
+        print("handle_user_input_deadline")
+        user_data = await state.get_data()
+        task_index = user_data.get("deadline_index")
+        if task_index is None:
+            await message.answer("⚠ Ошибка: индекс задачи не найден. Попробуйте заново.")
+            return
+
+        deadline_text = message.text.strip()
+        if not deadline_text:
+            await message.answer("⚠ Пожалуйста, введите дедлайн!")
+            return
+
+        ai = AI(deadline_text)
+        deadline_text = await ai.get_data()
+        deadline_text = deadline_text.strftime("%Y-%m-%d %H:%M:%S") if isinstance(deadline_text, datetime) else str(deadline_text)
+        deadline_text = deadline_text.replace("-", "\-")
+
+        # Проверка на существование дедлайна
+        if len(setup.task_buttons[task_index]) <= 4:
+            setup.task_buttons[task_index].append(deadline_text)
+
+        setup.task_buttons[task_index][4] = deadline_text
+
+        self.register_task()
+        deadline_text = deadline_text.replace("\-", "-")
+        await message.answer(f"✅ Дедлайн добавлен: {deadline_text}")
+        await state.clear()
+
     def register_all(self):
         """Регистрирует все команды, кнопки и обработчики FSM."""
         print("Вызов register_all()")
@@ -166,3 +230,7 @@ class Register:
         self.register_task_edit_callbacks()
         self.register_subtask_callbacks()
         self.register_task_priority_callbacks()
+        self.register_task_deadline_callbacks()
+        self.register_settings()
+        self.register_auth()
+        self.register_auth_callbacks()

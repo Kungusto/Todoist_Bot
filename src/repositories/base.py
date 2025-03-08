@@ -30,7 +30,6 @@ class BaseRepository :
         Принимает на вход pydantic-схему(ту, в которой айди не указан!), 
         записывает данные в новый столбец
         '''
-        print(data.model_dump())
         add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         query = await self.session.execute(add_stmt)
         result = query.scalars().first()

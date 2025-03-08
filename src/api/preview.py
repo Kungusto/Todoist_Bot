@@ -63,7 +63,7 @@ async def get_all_users() :
         print(result)
         return result
 
-# asyncio.run(get_all_users())  # получить всех пользователей
+asyncio.run(get_all_users())  # получить всех пользователей
 
 # ----------------------------------------------------------------
 
