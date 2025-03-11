@@ -9,6 +9,6 @@ class UsersOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     tg_id: Mapped[str] = mapped_column(String(12), unique=True)  # Используйте BigInteger для больших чисел
-    nickname: Mapped[str] = mapped_column(String(50), unique=True)
+    nickname: Mapped[str] = mapped_column(String(50))
     registrated: Mapped[date] = mapped_column(default=date.today)
     password: Mapped[str] = mapped_column(String(85))

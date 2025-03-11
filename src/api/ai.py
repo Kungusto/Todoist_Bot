@@ -1,94 +1,33 @@
 ﻿import asyncio
-from transformers import AutoModelForTokenClassification, AutoTokenizer, pipeline
-import torch
-from datetime import datetime, timedelta
-import ssl
-from deep_translator import GoogleTranslator
-
-ssl._create_default_https_context = ssl._create_unverified_context
-
-# Загружаем модель и токенизатор
-model_name = "Jean-Baptiste/camembert-ner-with-dates"
-device = "cuda" if torch.cuda.is_available() else "cpu"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForTokenClassification.from_pretrained(model_name).to(device)
-
-# Создаём пайплайн для распознавания дат
-ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
-
-
+import ollama
+from datetime import datetime
 class AI:
     def __init__(self, prompt: str):
         self.prompt = prompt
 
-    def translate_to_french(self, text: str) -> str:
-        """Переводит русский текст на французский с исправлением ошибок."""
-        translation = GoogleTranslator(source="ru", target="fr").translate(text)
-        # Исправляем возможные ошибки перевода
-        translation = translation.replace("APRONS", "Dans")  # Исправляем неверный перевод
-        return translation
-
-    def get_current_date(self):
-        """Получает текущую дату."""
-        return datetime.now()
-
-    def parse_relative_date(self, text):
-        """Обрабатывает относительные даты и возвращает дату в будущем."""
-        units = {
-            "JOUR": "days",
-            "JOURS": "days",
-            "HEURE": "hours",
-            "HEURES": "hours",
-            "MINUTE": "minutes",
-            "MINUTES": "minutes"
-        }
-
-        current_date = self.get_current_date()
-        delta = timedelta()
-
-        words = text.split()
-        for i in range(len(words) - 1):
-            try:
-                value = int(words[i])
-                unit = words[i + 1].upper()
-                if unit in units:
-                    delta += timedelta(**{units[unit]: value})
-            except ValueError:
-                continue
-
-        return (current_date + delta).strftime("%Y-%m-%d %H:%M")
+    async def get_today_data(self):
+        today = datetime.today()
+        return today.strftime("%Y-%m-%d-%H-%M")
 
     async def get_data(self):
-        """Определяет новую дату, добавляя интервал ко времени."""
-        print("Формируем дату")
+        """Определяет новую дату, отправляя запрос в Ollama."""
+        print("Формируем дату...")
 
-        # Переводим запрос
-        translated_prompt = self.translate_to_french(self.prompt)
-        print("Переведённый запрос:", translated_prompt)
+        # Явно указываем адрес Ollama
+        client = ollama.Client(host="http://localhost:11434")
+        today_data = await self.get_today_data()
 
-        # Извлекаем даты из текста
-        extracted_dates = ner_pipeline(translated_prompt)
-        print("Извлечённые данные:", extracted_dates)
+        print(today_data)
 
-        for entity in extracted_dates:
-            if entity["entity_group"] == "DATE":
-                date_text = entity["word"]
+        response = client.chat(model="qwen2.5-coder:latest", messages=[
+            {"role": "system", "content": "Ты нейросеть, которая отвечает только датой в формате YYYY-mm-DD-HH-MM."
+                                          "Учитывай, что если например сейчас 8 часов 10 июля и user пишет завтра, тебе надо просто прибавить день, а часы и минуты оставить те же, то есть ответ будет 2025-07-10-08-00."
+                                          "Если текст user не имеет отношения к дате и времени выведи None."
+                                          "Если дата или число которые пишет user меньше чем сегодняшняя пиши None."},
+            {"role": "user", "content": f"Сегодня {today_data}. Какая дата и время будет {self.prompt}?"}
+        ])
 
-                # Если дата в формате относительного времени, конвертируем её
-                if any(word in date_text.upper() for word in ["JOUR", "JOURS", "HEURE", "HEURES", "MINUTE", "MINUTES"]):
-                    return self.parse_relative_date(date_text)
+        answer = response["message"]["content"]
 
-                # Если дата абсолютная, пробуем парсить её
-                try:
-                    parsed_date = datetime.strptime(date_text, "%d %B %Y")
-                    return parsed_date.strftime("%Y-%m-%d")
-                except ValueError:
-                    pass
-
-        print("Ошибка: не удалось распознать дату")
-        return "-10"
-
-
-ai = AI("Через 1 день и 2 часа")
-result = asyncio.run(ai.get_data())
-print("Результат:", result)
+        if answer == "None": return None
+        else: return answer

@@ -1,6 +1,4 @@
-﻿import asyncio
-
-from src.schemas.tasks_first_step import TaskStepOneEdit, TaskStepOneAdd
+﻿from src.schemas.tasks_first_step import TaskStepOneEdit, TaskStepOneAdd
 from datetime import datetime
 from src.schemas.users import UserAdd, UserEdit
 from src.utils.init_dbmanager import get_db
@@ -11,32 +9,38 @@ class UserNotFoundError(Exception):
         self.message = f"Пользователь с {message} не найден."
         super().__init__(self.message)
 
-
 async def get_task():
     """Загружает задачи из БД в setup.task_buttons."""
     from src.api import setup
+    from src.api.register import Register
     async for db in get_db():
         result = await db.tasks_frst_stp.get_filtered(user_id=setup.user_id)
+        print(result)
         tasks_dict = []
 
-        if result:
-            for task in result:
-                task_data = [
-                    task.title,
-                    [],
-                    task.priority,
-                    [],
-                    task.complation_due.strftime("%Y-%m-%d")
-                ]
-                tasks_dict.append(task_data)
+        for task in result:
+            task_data = [
+                task.title,
+                [],  # Если подзадачи не заданы, используйте пустой список или 'None'
+                task.priority if task.priority is not None else None,  # Проверка на None
+                task.status if task.status is not None else 1,
+                task.complation_due.strftime("%Y-%m-%d-%M-%S") if task.complation_due else None
+            ]
+            tasks_dict.append(task_data)
 
         setup.task_buttons = tasks_dict
-        print("Загруженные задачи:", setup.task_buttons)
+
+        # Регистрация задач
+        register = Register()
+        register.register_all()
+
+        return tasks_dict
 
 
 async def set_task():
     """Синхронизирует задачи: добавляет, обновляет и удаляет лишние."""
     from src.api import setup
+    print(setup.user_id)
     async for db in get_db():
         existing_tasks = await db.tasks_frst_stp.get_filtered(user_id=setup.user_id)
         existing_titles = {task.title for task in existing_tasks}
@@ -56,12 +60,13 @@ async def set_task():
 
         # Обрабатываем добавление и обновление
         for task_data in setup.task_buttons:
-            title, _, priority, _, due_date_str = task_data
+            title, _, status, priority, due_date_str = task_data
             try:
-                complation_due = datetime.strptime(due_date_str, "%Y-%m-%d")
-            except ValueError as e:
+                complation_due = datetime.strptime(due_date_str, "%Y-%m-%d-%M-%S")
+            except Exception as e:
                 print(f"Ошибка преобразования даты ({due_date_str}):", e)
-                continue
+                complation_due = None
+
 
             if title in existing_titles:
                 existing_task = next(task for task in existing_tasks if task.title == title)
@@ -73,10 +78,12 @@ async def set_task():
 
                 # Добавляем обновлённую задачу
                 new_task = TaskStepOneEdit(
+                    user_id=setup.user_id,
                     title=title,
                     description=None,
                     complation_due=complation_due,
-                    priority=priority
+                    priority=priority,
+                    status=status
                 )
                 tasks_to_add.append(new_task)
             else:
@@ -86,7 +93,8 @@ async def set_task():
                     title=title,
                     description=None,
                     complation_due=complation_due,
-                    priority=priority
+                    priority=priority,
+                    status=status
                 )
                 tasks_to_add.append(new_task)
 
@@ -146,9 +154,4 @@ async def set_user():
             await db.users.add(new_user)
             await db.commit()
             print(f"Добавлен новый пользователь с tg_id {user_id}")
-
-async def main():
-    await get_user_by_nickname("Deimos")
-
-if __name__ == '__main__':
-    asyncio.run(main())
+        return None
