@@ -3,4 +3,5 @@ src/migrations
 .env
 alembic.ini
 venv
+.venv
 .idea
