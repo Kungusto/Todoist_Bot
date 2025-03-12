@@ -1,5 +1,3 @@
-import logging
-
 from aiogram import Dispatcher, Router
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
@@ -78,12 +76,23 @@ class Register:
             ]
         )
 
+    def register_task_priority(self):
+        from src.api import setup
+
+        setup.task_priority_edit_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=btn[0], callback_data=btn[1] if len(btn) > 1 else btn[0])]
+                for btn in setup.task_priority_edit_buttons
+            ]
+        )
+
+
     def register_settings(self):
         from src.api import setup
         setup.settings_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text=btn[0], callback_data=btn[1] if len(btn) > 1 else btn[0])]
-                for btn in setup.task_priority_edit_buttons
+                for btn in setup.settings_button
             ]
         )
 
@@ -105,7 +114,6 @@ class Register:
 
     def register_task_callbacks(self):
         """Регистрируем обработчик нажатий на задачи."""
-        from src.api import setup
         self.dp.callback_query.register(self.button_handler.task_selected, lambda c: c.data.startswith("task:"))
 
     def register_task_edit(self):
@@ -157,6 +165,14 @@ class Register:
     def register_task_status_callbacks(self):
         self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
                                         lambda c: c.data.startswith("change_status:"))
+        self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
+                                        lambda c: c.data.startswith("New"))
+        self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
+                                        lambda c: c.data.startswith("In_Progress"))
+        self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
+                                        lambda c: c.data.startswith("On_Hold"))
+        self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
+                                        lambda c: c.data.startswith("Completed"))
 
     async def handle_user_input_task(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
@@ -226,6 +242,7 @@ class Register:
 
         setup.task_buttons[task_index][1].append(subtask_text)
         self.register_task()
+        print(f"ПОдзадача: {setup.task_buttons}")
         await message.answer(f"✅ Подзадача добавлена: {subtask_text}")
         await set_task()
         await state.clear()
@@ -272,18 +289,13 @@ class Register:
     def register_all(self):
         """Регистрирует все команды, кнопки и обработчики FSM."""
         print("Вызов register_all()")
-        from src.api import setup
         self.register_commands()
         self.register_navigation()
         self.register_fsm_handler()
-
-        logging.info(f"Перед вызовом register_task: {setup.task_buttons}")
         self.register_task()
         self.register_task_callbacks()
-        logging.info(f"После вызова register_task: {setup.task_buttons}")
         self.register_task_edit()
         self.register_task_edit_callbacks()
-        logging.info(f"После вызова register_task_edit: {setup.task_buttons}")
         self.register_subtask_callbacks()
         self.register_task_priority_callbacks()
         self.register_task_deadline_callbacks()
@@ -292,5 +304,5 @@ class Register:
         self.register_auth_callbacks()
         self.register_task_status()
         self.register_task_status_callbacks()
-
-        logging.info(f"После всех вызовов: {setup.task_buttons}")
+        self.register_task_priority()
+        self.register_task_priority_callbacks()

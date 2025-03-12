@@ -294,7 +294,7 @@ class ButtonEditTaskHandler(BaseHandler):
             await callback.answer()
 
     async def priority_selected(self, callback: CallbackQuery, state: FSMContext):
-        from src.api import setup
+        from src.api import setup, data
 
         if callback.data.startswith("change_priority:"):
             _, priority_index = callback.data.split(":")
@@ -319,7 +319,7 @@ class ButtonEditTaskHandler(BaseHandler):
             await callback.answer()
 
         elif callback.data in ["Low", "Medium", "High"]:  # Обрабатываем приоритет
-            global task_priority
+            global task_priority, task_priority_index
             user_data = await state.get_data()
             priority_index = user_data.get("priority_index")
 
@@ -342,12 +342,14 @@ class ButtonEditTaskHandler(BaseHandler):
             for priority in task_priority_edit_buttons:
                 if priority[1] == callback.data:
                     task_priority = priority[2]
+                    task_priority_index = priority[3]
 
             if len(setup.task_buttons[priority_index]) < 3:
-                setup.task_buttons[priority_index].append(task_priority)
+                setup.task_buttons[priority_index].append(task_priority_index)
             else:
-                setup.task_buttons[priority_index][2] = task_priority
+                setup.task_buttons[priority_index][2] = task_priority_index
 
+            await data.set_task()
             await callback.message.answer(
                 f"*Приоритет задачи* `{task_name}` изменен на *{task_priority.replace('(', '\\(').replace(')', '\\)')}*",
                 parse_mode="MarkdownV2"
@@ -380,7 +382,7 @@ class ButtonEditTaskHandler(BaseHandler):
             await callback.answer()
 
     async def status_selected(self, callback: CallbackQuery, state: FSMContext):
-        from src.api import setup
+        from src.api import setup, data
         if callback.data.startswith("change_status:"):
             _, status_index = callback.data.split(":")
             status_index = int(status_index)
@@ -429,11 +431,11 @@ class ButtonEditTaskHandler(BaseHandler):
                     task_status = status[0]
                     task_status_index = status[2]
 
-            if len(setup.task_buttons[priority_index]) < 4:
-                setup.task_buttons[priority_index].append(task_status_index)
-            else:
-                setup.task_buttons[priority_index][3] = task_status_index
+            print(task_status_index)
+            setup.task_buttons[priority_index][3] = task_status_index
+            print(setup.task_buttons)
 
+            await data.set_task()
             await callback.message.answer(
                 f"*Статус задачи* `{task_name}` изменен на *{task_status.replace('(', '\\(').replace(')', '\\)')}*",
                 parse_mode="MarkdownV2"

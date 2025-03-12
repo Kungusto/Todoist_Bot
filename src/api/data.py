@@ -60,7 +60,7 @@ async def set_task():
 
         # Обрабатываем добавление и обновление
         for task_data in setup.task_buttons:
-            title, _, status, priority, due_date_str = task_data
+            title, _, priority, status, due_date_str = task_data
             try:
                 complation_due = datetime.strptime(due_date_str, "%Y-%m-%d-%M-%S")
             except Exception as e:
