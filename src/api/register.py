@@ -86,19 +86,6 @@ class Register:
             ]
         )
 
-
-    def register_settings(self):
-        from src.api import setup
-        setup.settings_keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text=btn[0], callback_data=btn[1] if len(btn) > 1 else btn[0])]
-                for btn in setup.settings_button
-            ]
-        )
-
-    def register_settings_callbacks(self):
-        pass
-
     def register_auth(self):
         from src.api import setup
         setup.auth_keyboard = InlineKeyboardMarkup(
@@ -299,7 +286,6 @@ class Register:
         self.register_subtask_callbacks()
         self.register_task_priority_callbacks()
         self.register_task_deadline_callbacks()
-        self.register_settings()
         self.register_auth()
         self.register_auth_callbacks()
         self.register_task_status()

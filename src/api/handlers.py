@@ -51,7 +51,8 @@ class ButtonNavHandler(BaseHandler):
         await message.answer("*Введите новую задачу\\:*", parse_mode="MarkdownV2")
 
     async def settings(self, message: Message):
-        await message.answer("⚙ *Настройки\\.\\.\\.*", parse_mode="MarkdownV2")
+        from src.api import setup
+        await message.answer("⚙ *Прочее\\.\\.\\.*", parse_mode="MarkdownV2", reply_markup=setup.misc_keyboard)
 
     async def task_selected(self, callback: CallbackQuery, state: FSMContext):
         """Обработчик нажатий на задачу из списка."""
