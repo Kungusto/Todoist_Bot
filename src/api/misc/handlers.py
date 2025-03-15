@@ -130,3 +130,5 @@ class FilterTask:
         """Убирает фильтрацию"""
         self.register.register_task("all")
         await callback.answer()
+
+
