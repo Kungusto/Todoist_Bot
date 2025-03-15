@@ -8,7 +8,7 @@ from aiogram import Bot, Dispatcher, Router
 from src.api.handlers import CommandHandler, ButtonNavHandler, ButtonEditTaskHandler, Auth
 from src.api.register import Register
 from src.api.misc.register import Register as MiscRegister
-from src.api.misc.handlers import Misc
+from src.api.misc.handlers import Misc, Sort_Task
 from src.api import setup
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -29,7 +29,8 @@ register = Register(dp, router, handler, button_nav_handler, button_edit_task_ha
 register.register_all()
 
 misc = Misc()
-misc_register = MiscRegister(dp, router, misc)
+sort = Sort_Task(button_nav_handler, register)
+misc_register = MiscRegister(dp, router, misc, sort)
 misc_register.register_all()
 
 async def main():

@@ -202,7 +202,7 @@ class Register:
             await message.answer("⚠ Пожалуйста, введите текст для изменения задачи!")
             return
 
-        setup.task_buttons[task_index] = [user_input]
+        setup.task_buttons[task_index][0] = user_input
         self.register_task()
         await message.answer(f"✅ Задача обновлена: {user_input}")
         await set_task()

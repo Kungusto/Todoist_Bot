@@ -50,16 +50,18 @@ class BaseRepository :
         result = await self.session.execute(query)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
-    async def edit(self, data: BaseModel, **filter_by) :
+    async def edit(self, data: BaseModel, **filter_by):
+        data_dict = data.model_dump(exclude_unset=True)
+        if "id" in data_dict:
+            del data_dict["id"]
         update_stmt = (
             update(self.model)
             .filter_by(**filter_by)
-            .values(**data.model_dump(exclude_unset=True))
+            .values(**data_dict)
             .returning(self.model)
         )
         result = await self.session.execute(update_stmt)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
-
 
     async def delete_filtered(self, *filter, **filter_by):
         """

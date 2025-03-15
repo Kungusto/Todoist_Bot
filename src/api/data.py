@@ -1,4 +1,9 @@
-﻿from src.schemas.tasks_first_step import TaskStepOneEdit, TaskStepOneAdd
+﻿import asyncio
+
+from sqlalchemy.orm.sync import update
+from sqlalchemy.testing.provision import register
+
+from src.schemas.tasks_first_step import TaskStepOneEdit, TaskStepOneAdd
 from datetime import datetime
 from src.schemas.users import UserAdd, UserEdit
 from src.utils.init_dbmanager import get_db
@@ -40,54 +45,81 @@ async def get_task():
 async def set_task():
     """Синхронизирует задачи: добавляет, обновляет и удаляет лишние."""
     from src.api import setup
-    print(setup.user_id)
     async for db in get_db():
         existing_tasks = await db.tasks_frst_stp.get_filtered(user_id=setup.user_id)
         existing_titles = {task.title for task in existing_tasks}
 
-        new_titles = {task[0] for task in setup.task_buttons}  # Собираем заголовки из setup.task_buttons
+        new_tasks = {task[0]: task for task in setup.task_buttons}  # Заголовок -> Данные задачи
 
+        print("Заголовки задач", existing_titles)
         tasks_to_add = []
         tasks_to_update = []
-        tasks_to_delete = [task for task in existing_tasks if task.title not in new_titles]  # Ищем лишние задачи
+        tasks_to_delete = []
+
+        # Проверяем, какие задачи нужно удалить (если заголовок не найден в новых задачах)
+        for task in existing_tasks:
+            if task.title not in new_tasks:
+                tasks_to_delete.append(task)
+            else:
+                new_task_data = new_tasks[task.title]
+                _, _, new_priority, new_status, new_due_date_str = new_task_data
+
+                try:
+                    new_complation_due = datetime.strptime(new_due_date_str, "%Y-%m-%d-%M-%S")
+                except Exception as e:
+                    print(f"Ошибка преобразования даты ({new_due_date_str}):", e)
+                    new_complation_due = None
+
+                # Проверяем, изменились ли данные задачи
+                if (
+                        task.priority != new_priority or
+                        task.status != new_status or
+                        task.complation_due != new_complation_due
+                ):
+                    tasks_to_update.append((task, new_task_data))
 
         # Удаляем задачи, которых нет в setup.task_buttons
-        for task in tasks_to_delete:
-            await db.tasks_frst_stp.delete_filtered(id=task.id)
         if tasks_to_delete:
+            for task in tasks_to_delete:
+                await db.tasks_frst_stp.delete_filtered(id=task.id)
             await db.commit()
             print("Удалены лишние задачи:", [task.title for task in tasks_to_delete])
 
-        # Обрабатываем добавление и обновление
-        for task_data in setup.task_buttons:
-            title, _, priority, status, due_date_str = task_data
+        # Обновляем задачи, если они изменились
+        updated_tasks = []  # Новый список для обновленных задач
+        for task, new_task_data in tasks_to_update:
+            new_title, _, new_priority, new_status, new_due_date_str = new_task_data
+
             try:
-                complation_due = datetime.strptime(due_date_str, "%Y-%m-%d-%M-%S")
+                new_complation_due = datetime.strptime(new_due_date_str, "%Y-%m-%d-%M-%S")
             except Exception as e:
-                print(f"Ошибка преобразования даты ({due_date_str}):", e)
-                complation_due = None
+                print(f"Ошибка преобразования даты ({new_due_date_str}):", e)
+                new_complation_due = None
 
+            # Обновляем поля существующей задачи
+            task.title = new_title
+            task.priority = new_priority
+            task.status = new_status
+            task.complation_due = new_complation_due
 
-            if title in existing_titles:
-                existing_task = next(task for task in existing_tasks if task.title == title)
+            updated_tasks.append(task)  # Добавляем обновленную задачу в отдельный список
 
-                # Перед обновлением удаляем старую версию задачи
-                await db.tasks_frst_stp.delete_filtered(id=existing_task.id)
-                await db.commit()
-                print(f"Удалена старая версия задачи: {title}")
+        if updated_tasks:
+            for task in updated_tasks:
+                await db.tasks_frst_stp.edit(task, id=task.id)
+            await db.commit()
+            print("Обновлены задачи:", [task.title for task in updated_tasks])
 
-                # Добавляем обновлённую задачу
-                new_task = TaskStepOneEdit(
-                    user_id=setup.user_id,
-                    title=title,
-                    description=None,
-                    complation_due=complation_due,
-                    priority=priority,
-                    status=status
-                )
-                tasks_to_add.append(new_task)
-            else:
-                # Добавляем новую задачу
+        # Добавляем новые задачи
+        for title, task_data in new_tasks.items():
+            if title not in existing_titles:
+                _, _, priority, status, due_date_str = task_data
+                try:
+                    complation_due = datetime.strptime(due_date_str, "%Y-%m-%d-%M-%S")
+                except Exception as e:
+                    print(f"Ошибка преобразования даты ({due_date_str}):", e)
+                    complation_due = None
+
                 new_task = TaskStepOneAdd(
                     user_id=setup.user_id,
                     title=title,
@@ -98,14 +130,12 @@ async def set_task():
                 )
                 tasks_to_add.append(new_task)
 
-        # Добавляем новые/обновленные задачи
         if tasks_to_add:
             for task in tasks_to_add:
                 await db.tasks_frst_stp.add(task)
             await db.commit()
             print("Добавлены новые задачи:", [task.title for task in tasks_to_add])
 
-        await get_task()
 
 async def get_user_by_tg_id():
     from src.api.setup import user_id as tg_id
