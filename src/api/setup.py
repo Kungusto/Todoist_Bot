@@ -165,6 +165,7 @@ misc_task_filter_buttons = [
     ["🔴 Показывать просроченные", "filter_overdue"],
     ["⚠ Показывать с высоким приоритетом", "filter_high_priority"],
     ["📅 Показывать задачи на сегодня", "filter_today"],
+    ["📝 Показывать все", "filter_all"],
 ]
 
 misc_task_filter_keyboard = InlineKeyboardMarkup(

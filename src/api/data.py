@@ -1,9 +1,4 @@
-﻿import asyncio
-
-from sqlalchemy.orm.sync import update
-from sqlalchemy.testing.provision import register
-
-from src.schemas.tasks_first_step import TaskStepOneEdit, TaskStepOneAdd
+﻿from src.schemas.tasks_first_step import TaskStepOneAdd
 from datetime import datetime
 from src.schemas.users import UserAdd, UserEdit
 from src.utils.init_dbmanager import get_db
@@ -40,7 +35,6 @@ async def get_task():
         register.register_all()
 
         return tasks_dict
-
 
 async def set_task():
     """Синхронизирует задачи: добавляет, обновляет и удаляет лишние."""
@@ -135,7 +129,6 @@ async def set_task():
                 await db.tasks_frst_stp.add(task)
             await db.commit()
             print("Добавлены новые задачи:", [task.title for task in tasks_to_add])
-
 
 async def get_user_by_tg_id():
     from src.api.setup import user_id as tg_id

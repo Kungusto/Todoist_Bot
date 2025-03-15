@@ -6,7 +6,7 @@ from src.api.setup import commands
 from src.api.userInputHandler import UserInputHandler
 from src.api.data import *
 
-global main_dp, main_handler, main_button_handler, main_router, main_button_edit_task_handler, main_auth
+global main_dp, main_handler, main_button_handler, main_router, main_button_edit_task_handler, main_auth, tasks
 
 class Register:
     def __init__(self, dp: Dispatcher = None, router: Router = None, handler=None, button_handler=None,
@@ -67,12 +67,23 @@ class Register:
         self.dp.message.register(self.handle_user_input_subtask, UserInputHandler.waiting_for_subtask)
         self.dp.message.register(self.handle_user_input_deadline, UserInputHandler.waiting_for_deadline)
 
-    def register_task(self):
+    def register_task(self, task_buttons=None):
         from src.api import setup
+        global tasks
+
+        if task_buttons is None:
+            task_buttons = tasks
+        elif task_buttons == "all":
+            task_buttons = setup.task_buttons
+            tasks = setup.task_keyboard
+
+        # Используем оригинальные индексы задач из setup.task_buttons
+        task_indices = [setup.task_buttons.index(task) for task in task_buttons if task in setup.task_buttons]
+
         setup.task_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text=task[0], callback_data=f"task:{index}")]
-                for index, task in enumerate(setup.task_buttons)
+                [InlineKeyboardButton(text=setup.task_buttons[i][0], callback_data=f"task:{i}")]
+                for i in task_indices
             ]
         )
 
@@ -279,7 +290,7 @@ class Register:
         self.register_commands()
         self.register_navigation()
         self.register_fsm_handler()
-        self.register_task()
+        self.register_task("all")
         self.register_task_callbacks()
         self.register_task_edit()
         self.register_task_edit_callbacks()

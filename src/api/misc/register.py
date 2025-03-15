@@ -2,11 +2,12 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 class Register:
-    def __init__(self, dp: Dispatcher = None, router: Router = None, misc=None, sort=None):
+    def __init__(self, dp: Dispatcher = None, router: Router = None, misc=None, sort=None, filter=None):
         self.dp = dp
         self.router = router
         self.misc = misc
         self.sort = sort
+        self.filter = filter
 
     def register_misc_keyboard(self):
         from src.api import setup
@@ -35,6 +36,15 @@ class Register:
             ]
         )
 
+    def register_misc_task_filter_keyboard(self):
+        from src.api import setup
+        setup.misc_task_filter_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+                for btn in setup.misc_task_filter_buttons
+            ]
+        )
+
     def register_misc_task_sorting_keyboard_callback(self):
         """Регистрация обработчиков для сортировки задач"""
         self.dp.callback_query.register(self.sort.sort_date_asc, lambda c: c.data == "sort_date_asc")
@@ -43,10 +53,18 @@ class Register:
         self.dp.callback_query.register(self.sort.sort_alphabetically, lambda c: c.data == "sort_alphabetically")
         self.dp.callback_query.register(self.sort.sort_reset, lambda c: c.data == "sort_reset")
 
+    def register_misc_task_filter_keyboard_callback(self):
+        self.dp.callback_query.register(self.filter.get_active_tasks, lambda c: c.data == "filter_active")
+        self.dp.callback_query.register(self.filter.get_completed_tasks, lambda c: c.data == "filter_completed")
+        self.dp.callback_query.register(self.filter.get_overdue_tasks, lambda c: c.data == "filter_overdue")
+        self.dp.callback_query.register(self.filter.get_high_priority_tasks, lambda c: c.data == "filter_high_priority")
+        self.dp.callback_query.register(self.filter.get_today_tasks, lambda c: c.data == "filter_today")
 
     def register_all(self):
         """Регистрирует все команды, кнопки и обработчики FSM."""
         self.register_misc_keyboard()
         self.register_misc_keyboard_callback()
         self.register_misc_task_sorting_keyboard()
+        self.register_misc_task_filter_keyboard()
         self.register_misc_task_sorting_keyboard_callback()
+        self.register_misc_task_filter_keyboard_callback()
