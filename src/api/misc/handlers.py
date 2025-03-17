@@ -38,7 +38,7 @@ class Sort_Task:
 
     async def sort_date_asc(self, callback: CallbackQuery):
         from src.api import setup, data
-        setup.task_buttons.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d"))
+        setup.task_buttons.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d-%M-%S"))
         await callback.message.answer("✅ Задачи отсортированы по дате (по возрастанию)")
         self.register.register_all()
         await self.nav_handler.list_tasks(callback.message)
@@ -47,7 +47,7 @@ class Sort_Task:
 
     async def sort_date_desc(self, callback: CallbackQuery):
         from src.api import setup, data
-        setup.task_buttons.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d"), reverse=True)
+        setup.task_buttons.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d-%M-%S"), reverse=True)
         await callback.message.answer("✅ Задачи отсортированы по дате (по убыванию)")
         self.register.register_all()
         await self.nav_handler.list_tasks(callback.message)

@@ -214,7 +214,7 @@ class Register:
             return
 
         setup.task_buttons[task_index][0] = user_input
-        self.register_task()
+        self.register_task("all")
         await message.answer(f"✅ Задача обновлена: {user_input}")
         await set_task()
         await state.clear()
@@ -239,7 +239,7 @@ class Register:
             setup.task_buttons[task_index].append([])
 
         setup.task_buttons[task_index][1].append(subtask_text)
-        self.register_task()
+        self.register_task("all")
         print(f"ПОдзадача: {setup.task_buttons}")
         await message.answer(f"✅ Подзадача добавлена: {subtask_text}")
         await set_task()
@@ -277,7 +277,7 @@ class Register:
 
         setup.task_buttons[task_index][4] = deadline_text
 
-        self.register_task()
+        self.register_task("all")
         print(setup.task_buttons)
         deadline_text = deadline_text.replace("\\-", "-")
         await message.answer(f"✅ Дедлайн добавлен: {deadline_text}")
