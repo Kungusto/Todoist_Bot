@@ -2,6 +2,6 @@ __pycache__
 src/migrations
 .env
 alembic.ini
-.venv
 venv
-
+.venv
+.idea

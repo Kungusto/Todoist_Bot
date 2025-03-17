@@ -2,6 +2,7 @@ from sqlalchemy import insert, select, update
 from src.database import async_session_maker
 from pydantic import BaseModel
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import delete
 
 from pydantic import BaseModel
 
@@ -36,7 +37,7 @@ class BaseRepository :
         
     async def get_filtered(self, *filter, **filter_by) :
         '''
-        Получить данные с фильтрами. Аргменты: 
+        Получить данные с фильтрами. Аргументы:
         1. **filter_by работает когда мы вызываем: get_filtered(user_id=1) 
         в этом случае мы получим всех юзеров с первым айдишником
         2. *filter принимает более сложные условия. скорей всего тебе не поднадобиться
@@ -49,11 +50,23 @@ class BaseRepository :
         result = await self.session.execute(query)
         return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
 
-    async def edit(self, data: BaseModel, **filter_by) : 
-        edit_stmt = (
-         update(self.model)
-         .filter_by(**filter_by)
-         .values(data.model_dump(exclude_unset=True))   
+    async def edit(self, data: BaseModel, **filter_by):
+        data_dict = data.model_dump(exclude_unset=True)
+        if "id" in data_dict:
+            del data_dict["id"]
+        update_stmt = (
+            update(self.model)
+            .filter_by(**filter_by)
+            .values(**data_dict)
+            .returning(self.model)
         )
-        await self.session.execute(edit_stmt)
-        return {'status':'OK'}
+        result = await self.session.execute(update_stmt)
+        return [self.schema.model_validate(model, from_attributes=True) for model in result.scalars().all()]
+
+    async def delete_filtered(self, *filter, **filter_by):
+        """
+        Удаляет записи с указанными фильтрами.
+        Пример использования: await repo.delete_filtered(user_id=1)
+        """
+        delete_stmt = delete(self.model).filter(*filter).filter_by(**filter_by)
+        await self.session.execute(delete_stmt)
