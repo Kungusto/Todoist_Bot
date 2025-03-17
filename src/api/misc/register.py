@@ -2,12 +2,13 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 class Register:
-    def __init__(self, dp: Dispatcher = None, router: Router = None, misc=None, sort=None, filter=None):
+    def __init__(self, dp: Dispatcher = None, router: Router = None, misc=None, sort=None, filter=None, settings=None):
         self.dp = dp
         self.router = router
         self.misc = misc
         self.sort = sort
         self.filter = filter
+        self.settings = settings
 
     def register_misc_keyboard(self):
         from src.api import setup
@@ -45,6 +46,15 @@ class Register:
             ]
         )
 
+    def register_misc_settings_keyboard(self):
+        from src.api import setup
+        setup.misc_settings_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+                for btn in setup.misc_settings_buttons
+            ]
+        )
+
     def register_misc_task_sorting_keyboard_callback(self):
         """Регистрация обработчиков для сортировки задач"""
         self.dp.callback_query.register(self.sort.sort_date_asc, lambda c: c.data == "sort_date_asc")
@@ -60,11 +70,23 @@ class Register:
         self.dp.callback_query.register(self.filter.get_high_priority_tasks, lambda c: c.data == "filter_high_priority")
         self.dp.callback_query.register(self.filter.get_today_tasks, lambda c: c.data == "filter_today")
 
+    def register_misc_settings_keyboard_callback(self):
+        """Регистрация обработчиков для настроек"""
+        self.dp.callback_query.register(self.settings.disable_notifications, lambda c: c.data == "disable_notifications")
+        self.dp.callback_query.register(self.settings.set_time_format, lambda c: c.data == "set_time_format")
+        self.dp.callback_query.register(self.settings.set_timezone, lambda c: c.data == "set_timezone")
+        self.dp.callback_query.register(self.settings.set_theme, lambda c: c.data == "set_theme")
+        self.dp.callback_query.register(self.settings.set_auto_delete, lambda c: c.data == "set_auto_delete")
+        self.dp.callback_query.register(self.settings.set_auto_move, lambda c: c.data == "set_auto_move")
+        self.dp.callback_query.register(self.settings.set_language, lambda c: c.data == "set_language")
+
     def register_all(self):
         """Регистрирует все команды, кнопки и обработчики FSM."""
         self.register_misc_keyboard()
         self.register_misc_keyboard_callback()
         self.register_misc_task_sorting_keyboard()
         self.register_misc_task_filter_keyboard()
+        self.register_misc_settings_keyboard()
         self.register_misc_task_sorting_keyboard_callback()
         self.register_misc_task_filter_keyboard_callback()
+        self.register_misc_settings_keyboard_callback()

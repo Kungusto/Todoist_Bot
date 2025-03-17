@@ -4,7 +4,6 @@ from aiogram.types import CallbackQuery
 from src.api.handlers import ButtonNavHandler
 from src.api.register import Register
 
-
 class Misc:
     async def misc_notifications(self, callback: CallbackQuery):
         from src.api import setup
@@ -90,15 +89,30 @@ class FilterTask:
         """Фильтрует только активные (в процессе) задачи."""
         from src.api import setup
         tasks = [task for task in setup.task_buttons if task[3] == 1 or task[3] == 2]
+
+        # Выводим сообщение после фильтрации
+        await callback.message.answer(
+            "🔵 *Активные задачи отфильтрованы*.",
+            parse_mode="MarkdownV2"
+        )
+
         self.register.register_task(tasks)
+        await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
 
     async def get_completed_tasks(self, callback: CallbackQuery):
         """Фильтрует завершённые задачи."""
         from src.api import setup
         tasks = [task for task in setup.task_buttons if task[3] == 4]
-        print(tasks)
+
+        # Выводим сообщение после фильтрации
+        await callback.message.answer(
+            "✅ *Завершённые задачи отфильтрованы*.",
+            parse_mode="MarkdownV2"
+        )
+
         self.register.register_task(tasks)
+        await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
 
     async def get_overdue_tasks(self, callback: CallbackQuery):
@@ -107,14 +121,30 @@ class FilterTask:
         from datetime import date
         today = date.today().strftime("%Y-%m-%d")
         tasks = [task for task in setup.task_buttons if task[4] < today]
+
+        # Выводим сообщение после фильтрации
+        await callback.message.answer(
+            "⏳ *Просроченные задачи отфильтрованы*.",
+            parse_mode="MarkdownV2"
+        )
+
         self.register.register_task(tasks)
+        await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
 
     async def get_high_priority_tasks(self, callback: CallbackQuery):
         """Фильтрует задачи с высоким приоритетом."""
         from src.api import setup
         tasks = [task for task in setup.task_buttons if task[2] == 3]
+
+        # Выводим сообщение после фильтрации
+        await callback.message.answer(
+            "⚠ *Задачи с высоким приоритетом отфильтрованы*.",
+            parse_mode="MarkdownV2"
+        )
+
         self.register.register_task(tasks)
+        await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
 
     async def get_today_tasks(self, callback: CallbackQuery):
@@ -123,12 +153,57 @@ class FilterTask:
         from datetime import date
         today = date.today().strftime("%Y-%m-%d")
         tasks = [task for task in setup.task_buttons if task[4] == today]
+
+        # Выводим сообщение после фильтрации
+        await callback.message.answer(
+            "📅 *Задачи на сегодня отфильтрованы*.",
+            parse_mode="MarkdownV2"
+        )
+
         self.register.register_task(tasks)
+        await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
 
     async def get_all_tasks(self, callback: CallbackQuery):
-        """Убирает фильтрацию"""
+        """Убирает фильтрацию и показывает все задачи."""
+        from src.api import setup
+        tasks = setup.task_buttons
+
+        # Выводим сообщение после снятия фильтрации
+        await callback.message.answer(
+            "📋 *Все задачи отображаются*.",
+            parse_mode="MarkdownV2"
+        )
+
         self.register.register_task("all")
+        await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
 
+class Settings:
+    async def disable_notifications(self, callback: CallbackQuery):
+        await callback.message.answer("🔕 Уведомления отключены!")
+        await callback.answer()
 
+    async def set_time_format(self, callback: CallbackQuery):
+        await callback.message.answer("⏰ Формат времени изменён! Выберите формат: 24ч / 12ч.")
+        await callback.answer()
+
+    async def set_timezone(self, callback: CallbackQuery):
+        await callback.message.answer("🌎 Выберите ваш часовой пояс.")
+        await callback.answer()
+
+    async def set_theme(self, callback: CallbackQuery):
+        await callback.message.answer("🎨 Выберите тему: Светлая или Тёмная.")
+        await callback.answer()
+
+    async def set_auto_delete(self, callback: CallbackQuery):
+        await callback.message.answer("🗑 Настройки автоудаления завершённых задач: 7/30 дней.")
+        await callback.answer()
+
+    async def set_auto_move(self, callback: CallbackQuery):
+        await callback.message.answer("🔁 Автоперенос невыполненных задач активирован.")
+        await callback.answer()
+
+    async def set_language(self, callback: CallbackQuery):
+        await callback.message.answer("🌐 Выберите язык интерфейса.")
+        await callback.answer()
