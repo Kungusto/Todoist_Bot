@@ -14,4 +14,4 @@ class TasksFirstStepOrm(Base) :
     complation_due: Mapped[datetime] = mapped_column(default=datetime.now())
     priority: Mapped[int] = mapped_column(Integer(), nullable=False)
     # important: Mapped[bool] = mapped_column(default=False, nullable=False) - пока его нет в миграциях. я не понял что ты имел ввиду
-
+    
