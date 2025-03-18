@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-class Noficication(BaseModel) :
+class Notification(BaseModel) :
     id : int
     user_id: int
     title: str
