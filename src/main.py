@@ -12,7 +12,6 @@ from src.api.misc.handlers import Misc, Sort_Task, FilterTask, Settings
 from src.api import setup
 
 sys.path.append(str(Path(__file__).parent.parent))
-
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=setup.token)
