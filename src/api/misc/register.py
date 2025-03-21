@@ -72,7 +72,7 @@ class Register:
 
     def register_misc_settings_keyboard_callback(self):
         """Регистрация обработчиков для настроек"""
-        self.dp.callback_query.register(self.settings.disable_notifications, lambda c: c.data == "disable_notifications")
+        self.dp.callback_query.register(self.settings.disable_notifications, lambda c: c.data == "notifications")
         self.dp.callback_query.register(self.settings.set_time_format, lambda c: c.data == "set_time_format")
         self.dp.callback_query.register(self.settings.set_timezone, lambda c: c.data == "set_timezone")
         self.dp.callback_query.register(self.settings.set_theme, lambda c: c.data == "set_theme")

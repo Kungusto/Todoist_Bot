@@ -1,3 +1,5 @@
+from sqlalchemy import false
+
 from src.api.handlers import CommandHandler
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -139,15 +141,21 @@ misc_notifications_keyboard = InlineKeyboardMarkup(
         for btn in misc_notifications_buttons
     ]
 )
+settings = {
+    "notifications" : False,
+    "time_format" : 24,
+    "auto_delete" : 7,
+    "ai" : False,
+    "language" : "Russian"
+}
 
+notification_fun = "🔕 Отключить уведомления" if settings["notifications"] == True else "🔔 Включить уведомления"
 # Кнопки для "Настроек"
 misc_settings_buttons = [
-    ["🔕 Отключить уведомления", "disable_notifications"],
+    [notification_fun, "notifications"],
     ["⏰ Установить формат времени (24ч / 12ч)", "set_time_format"],
-    ["🌎 Часовой пояс", "set_timezone"],
-    ["🎨 Выбор темы (Светлая / Тёмная)", "set_theme"],
     ["🗑 Автоудаление завершённых задач (7/30 дней)", "set_auto_delete"],
-    ["🔁 Автоперенос невыполненных задач", "set_auto_move"],
+    ["Искусственный интеллект", "set_ai"],
     ["🌐 Смена языка", "set_language"],
 ]
 
@@ -206,7 +214,7 @@ misc_profile_keyboard = InlineKeyboardMarkup(
     ]
 )
 
-notifications = [
+notifications_button = [
     ["Выполнен вход", "2025-01-01"],
     ["Задача Полить цветы просрочена!", "2024-08-21"]
 ]
@@ -214,5 +222,3 @@ user_id = "14"
 nickname = "Deimos"
 password = "1s"
 active_codes = {}  # Словарь для хранения кодов подтверждения
-
-
