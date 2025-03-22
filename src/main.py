@@ -7,7 +7,6 @@ from aiogram import Bot, Dispatcher, Router
 sys.path.append(str(Path(__file__).parent.parent))
 logging.basicConfig(level=logging.INFO)
 
-from api.misc.notifications import Notifications
 from src.api.handlers import CommandHandler, ButtonNavHandler, ButtonEditTaskHandler, Auth
 from src.api.register import Register
 from src.api.misc.register import Register as MiscRegister
@@ -39,8 +38,8 @@ misc_register.register_all()
 notifications = Notifications(router.callback_query)
 
 async def main():
-    await asyncio.gather(notifications.start_all_tasks())
     await dp.start_polling(bot)
+    await asyncio.create_task(notifications.start_all_tasks())
 
 if __name__ == '__main__':
     try:

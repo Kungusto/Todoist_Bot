@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from src.api.setup import commands
 from src.api.userInputHandler import UserInputHandler
 from src.api.data import *
+from src.api.ai import AI
 
 global main_dp, main_handler, main_button_handler, main_router, main_button_edit_task_handler, main_auth, tasks
 
@@ -185,10 +186,13 @@ class Register:
         if not user_input:
             await message.answer("⚠ Пожалуйста, введите задачу!")
             return
+        if setup.settings["ai"]:
+            ai = AI(user_input)
+            ok = await ai.get_task()
+            if not ok: await message.answer("Ошибка добавления задачи. Попробуйте снова.")
+        else: setup.task_buttons.append([user_input, None, None, None, None])
 
-        setup.task_buttons.append([user_input, None, None, None, None])
-
-        self.register_task()
+        self.register_all()
         await message.answer(f"✅ Задача добавлена: {user_input}")
         await set_task()
         await state.clear()

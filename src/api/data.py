@@ -24,7 +24,7 @@ async def get_task():
                 [],  # Если подзадачи не заданы, используйте пустой список или 'None'
                 task.priority if task.priority is not None else None,  # Проверка на None
                 task.status if task.status is not None else 1,
-                task.complation_due.strftime("%Y-%m-%d-%M-%S") if task.complation_due else None
+                task.complation_due.strftime("%Y-%m-%d-%H-%M-%S") if task.complation_due else None
             ]
             tasks_dict.append(task_data)
 
@@ -59,7 +59,7 @@ async def set_task():
                 _, _, new_priority, new_status, new_due_date_str = new_task_data
 
                 try:
-                    new_complation_due = datetime.strptime(new_due_date_str, "%Y-%m-%d-%M-%S")
+                    new_complation_due = datetime.strptime(new_due_date_str, "%Y-%m-%d-%H-%M-%S")
                 except Exception as e:
                     print(f"Ошибка преобразования даты ({new_due_date_str}):", e)
                     new_complation_due = None
@@ -85,7 +85,7 @@ async def set_task():
             new_title, _, new_priority, new_status, new_due_date_str = new_task_data
 
             try:
-                new_complation_due = datetime.strptime(new_due_date_str, "%Y-%m-%d-%M-%S")
+                new_complation_due = datetime.strptime(new_due_date_str, "%Y-%m-%d-%H-%M-%S")
             except Exception as e:
                 print(f"Ошибка преобразования даты ({new_due_date_str}):", e)
                 new_complation_due = None
@@ -109,7 +109,7 @@ async def set_task():
             if title not in existing_titles:
                 _, _, priority, status, due_date_str = task_data
                 try:
-                    complation_due = datetime.strptime(due_date_str, "%Y-%m-%d-%M-%S")
+                    complation_due = datetime.strptime(due_date_str, "%Y-%m-%d-%H-%M-%S")
                 except Exception as e:
                     print(f"Ошибка преобразования даты ({due_date_str}):", e)
                     complation_due = None
