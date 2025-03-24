@@ -37,7 +37,7 @@ class Sort_Task:
 
     async def sort_date_asc(self, callback: CallbackQuery):
         from src.api import setup, data
-        setup.task_buttons.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d-%M-%S"))
+        setup.task_buttons.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d-%H-%M-%S"))
         await callback.message.answer("✅ Задачи отсортированы по дате (по возрастанию)")
         self.register.register_all()
         await self.nav_handler.list_tasks(callback.message)
@@ -46,7 +46,7 @@ class Sort_Task:
 
     async def sort_date_desc(self, callback: CallbackQuery):
         from src.api import setup, data
-        setup.task_buttons.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d-%M-%S"), reverse=True)
+        setup.task_buttons.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d-%H-%M-%S"), reverse=True)
         await callback.message.answer("✅ Задачи отсортированы по дате (по убыванию)")
         self.register.register_all()
         await self.nav_handler.list_tasks(callback.message)
@@ -188,20 +188,15 @@ class Settings:
         await callback.message.answer("⏰ Формат времени изменён! Выберите формат: 24ч / 12ч.")
         await callback.answer()
 
-    async def set_timezone(self, callback: CallbackQuery):
-        await callback.message.answer("🌎 Выберите ваш часовой пояс.")
-        await callback.answer()
-
-    async def set_theme(self, callback: CallbackQuery):
-        await callback.message.answer("🎨 Выберите тему: Светлая или Тёмная.")
-        await callback.answer()
-
     async def set_auto_delete(self, callback: CallbackQuery):
         await callback.message.answer("🗑 Настройки автоудаления завершённых задач: 7/30 дней.")
         await callback.answer()
 
-    async def set_auto_move(self, callback: CallbackQuery):
-        await callback.message.answer("🔁 Автоперенос невыполненных задач активирован.")
+    async def set_ai(self, callback: CallbackQuery):
+        from src.api import setup
+        is_ai = "выключён" if setup.settings["ai"] else "включён"
+        setup.settings["ai"] = not setup.settings["ai"]
+        await callback.message.answer(f"Режим искусственного интеллекта {is_ai}.")
         await callback.answer()
 
     async def set_language(self, callback: CallbackQuery):

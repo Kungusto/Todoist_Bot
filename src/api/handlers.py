@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 from src.api.userInputHandler import UserInputHandler
 from src.api.data import *
 import random
+from src.utils.escape_md import *
 
 class BaseHandler:
     def __init__(self, bot, dispatcher):
@@ -100,11 +101,11 @@ class ButtonNavHandler(BaseHandler):
             deadline = task_data[4] if len(task_data) > 4 else "Не установлен"
 
             await callback.message.answer(
-                f"*Вы выбрали задачу\\:* `{task_name}`\n\n"
-                f"*Подзадачи:*\n{subtasks}\n\n"
-                f"*Приоритет:* `{priority}`\n"
-                f"*Статус:* `{status}`\n"
-                f"*Дедлайн:* `{deadline}`\n\n",
+                f"*Вы выбрали задачу:* `{escape_md(task_name)}`\n\n"
+                f"*Подзадачи:*\n{escape_md(subtasks)}\n\n"
+                f"*Приоритет:* `{escape_md(priority)}`\n"
+                f"*Статус:* `{escape_md(status)}`\n"
+                f"*Дедлайн:* `{escape_md(deadline)}`\n\n",
                 reply_markup=setup.task_edit_keyboard,
                 parse_mode="MarkdownV2"
             )
