@@ -7,7 +7,7 @@ class TaskStepOneAdd(BaseModel) :
     description : str | None = None
     complation_due : datetime | None = None
     priority : conint(ge=1, le=3) | None = None # type: ignore
-    status : conint(ge=1, le=4) | None = None
+    status : conint(ge=1, le=4) | None = None # type: ignore
 
 class TaskStepOne(TaskStepOneAdd) :
     id : int
@@ -18,4 +18,4 @@ class TaskStepOneEdit(BaseModel) :
     description : str | None = None
     complation_due : datetime | None = None
     priority : conint(ge=1, le=3) | None = None # type: ignore
-    status : conint(ge=1, le=4) | None = None
+    status : conint(ge=1, le=4) | None = None # type: ignore

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Integer, String, ForeignKey
 from datetime import datetime
 
-class TasksFirstStepORM(Base) : 
+class TasksSecondStepORM(Base) : 
     __tablename__ = 'TasksStep2'
     
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True) 

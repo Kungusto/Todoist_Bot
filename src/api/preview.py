@@ -1,4 +1,5 @@
 # -------- Без этих команд он не видит папку src в импортах (потом закомментить. он также есть и в main.py). при тестах не комментить
+from datetime import datetime, timedelta
 import sys
 from pathlib import Path
 
@@ -63,7 +64,7 @@ async def get_all_users() :
         print(result)
         return result
 
-asyncio.run(get_all_users())  # получить всех пользователей
+# asyncio.run(get_all_users())  # получить всех пользователей
 
 # ----------------------------------------------------------------
 
@@ -111,4 +112,13 @@ async def get_id_by_tg_id() :
         users = await db.users.get_tg_id_by_id(1)
         print([user.tg_id for user in users])
     
-asyncio.run(get_id_by_tg_id())
+# asyncio.run(get_id_by_tg_id())
+
+async def get_tasks_hour_to_complete() :
+    async for db in get_db() : 
+        tasks = await db.tasks.get_tasks_x_to_complete(
+           timedelta(days=3)
+            )
+        print(tasks)
+
+asyncio.run(get_tasks_hour_to_complete())
