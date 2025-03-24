@@ -91,6 +91,8 @@ async def edit_user(data, *filter, **filter_by) :
 # data_to_edit = UserEdit(tg_id='123456789') # создаем Pydantic-схему
 # asyncio.run(edit_user(data_to_edit, id=1)) # изменить данные в строчке пользователя с айдишником 1 
 
+# ----------------------------------------------------------------
+
 async def edit_tasks(data, **filter_by) :
     '''изменить существующую задачу'''
     async for db in get_db() :
@@ -99,5 +101,14 @@ async def edit_tasks(data, **filter_by) :
         await db.commit()
         return result
     
-data_to_edit = TaskStepOneEdit(title='Хуйня задача')
-asyncio.run(edit_tasks(data_to_edit, id=1))
+# data_to_edit = TaskStepOneEdit(title='Хуйня задача')
+# asyncio.run(edit_tasks(data_to_edit, id=1))
+
+# ----------------------------------------------------------------
+
+async def get_id_by_tg_id() : 
+    async for db in get_db() :
+        users = await db.users.get_tg_id_by_id(1)
+        print([user.tg_id for user in users])
+    
+asyncio.run(get_id_by_tg_id())

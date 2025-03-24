@@ -174,7 +174,10 @@ class Auth:
             setup.active_codes[user.tg_id] = confirmation_code
 
             try:
-                await message.bot.send_message(user.tg_id, f"🔐 Ваш код подтверждения: {confirmation_code}")
+                setup.notifications.append()
+                setup.notifications[-1][0] = f"🔐 Ваш код подтверждения: {confirmation_code}"
+                setup.notifications[-1][1] = ...
+                #await message.bot.send_message(user.tg_id, f"🔐 Ваш код подтверждения: {confirmation_code}")
             except Exception:
                 pass  # Если не удалось отправить, просто продолжаем
 

@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 
 class Notifications:
+    
     @staticmethod
     async def notifications() : 
         from src.api import setup
