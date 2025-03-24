@@ -44,6 +44,8 @@ class Notifications:
                 if datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S") < datetime.now():
                     pass
                 #потом допишешь по аналогии с task_time_out
+                
+    async def main_notification(self) : ...
 
 # в main ничего делать не надо!!!
 # только тут методы напиши и всё

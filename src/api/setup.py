@@ -1,5 +1,3 @@
-from sqlalchemy import false
-
 from src.api.handlers import CommandHandler
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
