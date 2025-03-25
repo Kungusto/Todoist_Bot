@@ -126,6 +126,7 @@ class Auth:
             print("До", setup.task_buttons)
             setup.task_buttons = await get_task()
             await message.answer(f"С возвращением, {user.nickname}!", reply_markup=setup.nav_keyboard)
+
             print("После", setup.task_buttons)
         except UserNotFoundError:
             await message.answer(

@@ -39,7 +39,11 @@ notifications = Notifications(router.callback_query)
 
 async def main():
     await dp.start_polling(bot)
-    await asyncio.create_task(notifications.start_all_tasks())
+    # await asyncio.create_task(notifications.start_all_tasks())
+    # await asyncio.create_task(Notifications(router.callback_query).main_notification())
+
+
+
 
 if __name__ == '__main__':
     try:

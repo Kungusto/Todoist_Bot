@@ -117,7 +117,7 @@ async def get_id_by_tg_id() :
 async def get_tasks_hour_to_complete() :
     async for db in get_db() : 
         tasks = await db.tasks.get_tasks_x_to_complete(
-           timedelta(days=3)
+           timedelta(hours=1)
             )
         print(tasks)
 
