@@ -13,7 +13,7 @@ from src.api.misc.register import Register as MiscRegister
 from src.api.misc.handlers import Misc, Sort_Task, FilterTask, Settings
 from src.api.misc.notifications import Notifications
 from src.api import setup
-from src.api.misc.auto_delete import *
+
 
 bot = Bot(token=setup.token)
 
@@ -38,9 +38,8 @@ misc_register.register_all()
 notifications = Notifications(router.callback_query)
 
 async def main():
-    asyncio.create_task(notifications.start_all_tasks())
     await dp.start_polling(bot)
-
+    await asyncio.create_task(notifications.start_all_tasks())
 
 if __name__ == '__main__':
     try:

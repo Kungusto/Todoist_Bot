@@ -1,7 +1,9 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from aiogram.types import CallbackQuery
+
+from src.utils.init_dbmanager import get_db
 
 class Notifications:
     # async def notifications():
@@ -44,6 +46,15 @@ class Notifications:
                 if datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S") < datetime.now():
                     await asyncio.sleep(60)  # Временный заглушка (добавишь логику позже)
                 #потом допишешь по аналогии с task_time_out
+                
+    async def main_notification(self) : 
+        while True :
+            async for db in get_db() :
+                print("ТЕСТ")
+                await asyncio.sleep(15)
+                target_tasks = await db.tasks.get_tasks_x_to_complete(timedelta(hours=2))
+                await self.callback.message.answer(target_tasks)
+                
 
 # в main ничего делать не надо!!!
 # только тут методы напиши и всё

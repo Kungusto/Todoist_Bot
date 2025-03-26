@@ -1,5 +1,3 @@
-import asyncio
-
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 from src.api.userInputHandler import UserInputHandler
@@ -115,6 +113,7 @@ class ButtonNavHandler(BaseHandler):
 
             setup.current_state = 3
             await callback.answer()
+
 
 class Auth:
     async def first(self, message: Message):
