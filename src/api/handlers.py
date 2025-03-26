@@ -1,9 +1,12 @@
+import asyncio
+
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 from src.api.userInputHandler import UserInputHandler
 from src.api.data import *
 import random
 from src.utils.escape_md import *
+from src.api.misc.auto_delete import *
 
 class BaseHandler:
     def __init__(self, bot, dispatcher):
@@ -113,7 +116,6 @@ class ButtonNavHandler(BaseHandler):
             setup.current_state = 3
             await callback.answer()
 
-
 class Auth:
     async def first(self, message: Message):
         from src.api import setup
@@ -126,6 +128,8 @@ class Auth:
             print("До", setup.task_buttons)
             setup.task_buttons = await get_task()
             await message.answer(f"С возвращением, {user.nickname}!", reply_markup=setup.nav_keyboard)
+
+            asyncio.create_task(delete_task())
             print("После", setup.task_buttons)
         except UserNotFoundError:
             await message.answer(

@@ -42,7 +42,7 @@ class Notifications:
             from src.api import setup
             for task in setup.task_buttons:
                 if datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S") < datetime.now():
-                    pass
+                    await asyncio.sleep(60)  # Временный заглушка (добавишь логику позже)
                 #потом допишешь по аналогии с task_time_out
 
 # в main ничего делать не надо!!!

@@ -9,7 +9,7 @@ class AI:
 
     async def get_today_data(self):
         today = datetime.today()
-        return today.strftime("%Y-%m-%d-%H-%M")
+        return today.strftime("%Y-%m-%d-%H-%M-%S")
 
     async def get_data(self):
         """Определяет новую дату, отправляя запрос в Ollama."""
@@ -39,7 +39,7 @@ class AI:
         print("Формируем новую задачу...")
         from src.api import setup
 
-        today_date = datetime.now().strftime("%Y-%m-%d-%H-%M")
+        today_date = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
         # Подготавливаем JSON-структуру задач для передачи нейросети
         tasks_data = [
@@ -58,8 +58,8 @@ class AI:
             {"role": "system", "content":
                 "Ты создаешь новую задачу, связанную с запросом пользователя. Ответ давай только в формате JSON.\n"
                 "Формат: {'title': 'Название задачи', 'subtasks': ['Подзадача 1', 'Подзадача 2'], "
-                "'priority': 2, 'status': 1, 'deadline': 'YYYY-MM-DD'}.\n"
-                "Приоритет: 1 - низкий, 2 - средний, 3 - высокий.\n"
+                "'priority': 2, 'status': 1, 'deadline': 'YYYY-MM-DD-HH-MM-SS'}.\n"
+                "Приоритет: 1 - высокий, 2 - средний, 3 - низкий.\n"
                 "Если в запросе пользователя есть слова 'не срочно', 'можно потом', 'когда будет время' – ставь приоритет 1.\n"
                 "Если задача содержит несколько этапов, ставь **логичный порядок выполнения** в подзадачах."
              },
@@ -83,18 +83,25 @@ class AI:
             return None
 
         try:
-            new_task = json.loads(json_match.group())  # Декодируем JSON
+            new_task = json.loads(json_match.group())
+            required_keys = ["title", "priority", "status", "deadline"]
 
-            if all(key in new_task for key in ["title", "priority", "status", "deadline"]):
-                # Проверяем дедлайн
-                task_deadline = datetime.strptime(new_task["deadline"], "%Y-%m-%d-%H-%M-%S")
-                if task_deadline < datetime.today():
-                    print(f"⚠️ Дедлайн {new_task['deadline']} устарел. Устанавливаем новую дату...")
-                    new_task["deadline"] = (datetime.today() + timedelta(days=3)).strftime("%Y-%m-%d")
+            if all(key in new_task for key in required_keys):
+                if new_task["deadline"]:
+                    try:
+                        task_deadline = datetime.strptime(new_task["deadline"], "%Y-%m-%d-%H-%M-%S")
+                        if task_deadline < datetime.today():
+                            print(f"⚠️ Дедлайн {new_task['deadline']} устарел. Устанавливаем новую дату...")
+                            new_task["deadline"] = (datetime.today() + timedelta(days=3)).strftime("%Y-%m-%d-%H-%M-%S")
+                    except ValueError:
+                        print(f"Ошибка: некорректный формат даты {new_task['deadline']}. Устанавливаем новую дату...")
+                        new_task["deadline"] = (datetime.today() + timedelta(days=3)).strftime("%Y-%m-%d-%H-%M-%S")
+                else:
+                    print("Ошибка: дедлайн отсутствует. Устанавливаем стандартное значение.")
+                    new_task["deadline"] = (datetime.today() + timedelta(days=3)).strftime("%Y-%m-%d-%H-%M-%S")
 
-                # Добавляем задачу
                 setup.task_buttons.append([
-                    self.prompt,
+                    new_task["title"],
                     new_task.get("subtasks", []),
                     new_task["priority"],
                     new_task["status"],
@@ -105,7 +112,6 @@ class AI:
             else:
                 print("Ошибка: JSON не содержит все нужные ключи", new_task)
                 return None
-
         except json.JSONDecodeError:
             print("Ошибка: Ollama вернула некорректный JSON", answer)
             return None
