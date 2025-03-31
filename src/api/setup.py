@@ -215,7 +215,9 @@ notifications_button = [
     ["Выполнен вход", "2025-01-01"],
     ["Задача Полить цветы просрочена!", "2024-08-21"]
 ]
-user_id = "14"
-nickname = "Deimos"
-password = "1s"
+
+id = 14
+user_id = -1
+nickname = -1
+password = -1
 active_codes = {}  # Словарь для хранения кодов подтверждения

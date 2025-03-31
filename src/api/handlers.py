@@ -119,11 +119,13 @@ class Auth:
     async def first(self, message: Message):
         from src.api import setup
         try:
+            setup.user_id = str(message.from_user.id)
+            print(f"Айди пользователя: {setup.user_id}")
             user = await get_user_by_tg_id()
             setup.nickname = user.nickname
             setup.password = user.password
-            setup.user_id = user.tg_id
-            print(setup.user_id)
+            setup.id = int(user.id)
+            print(f"Айди колонки пользователя: {setup.id}")
             print("До", setup.task_buttons)
             setup.task_buttons = await get_task()
             await message.answer(f"С возвращением, {user.nickname}!", reply_markup=setup.nav_keyboard)

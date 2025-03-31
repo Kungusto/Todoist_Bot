@@ -9,7 +9,6 @@ class TasksFirstStepOrm(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('Users.id'))
     title: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    description: Mapped[str | None] = mapped_column(String(250))
     complation_due: Mapped[datetime | None] = mapped_column(default=datetime.now)  # Исправлено
     priority: Mapped[int | None] = mapped_column(Integer())
     status: Mapped[int | None] = mapped_column(Integer(), default=1)

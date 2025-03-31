@@ -9,6 +9,3 @@ class TasksSecondStepORM(Base) :
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True) 
     id_super_task: Mapped[int] = mapped_column(ForeignKey('TasksStep1.id'))    
     title: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    description: Mapped[str | None] = mapped_column(String(250))
-    complation_due: Mapped[datetime] = mapped_column(default=datetime.now())
-    priority: Mapped[int] = mapped_column(Integer(), nullable=False)

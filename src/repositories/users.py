@@ -9,7 +9,14 @@ class UsersRepository(BaseRepository)  :
     model = UsersOrm
     schema = User
 
-    async def get_tg_id_by_id(self, id) : 
+    async def get_tg_id_by_id(self, id):
         query = select(UsersOrm).filter_by(id=id)
-        user = await self.session.execute(query)
-        return user.tg_id
+        result = await self.session.execute(query)
+        user = result.scalars().first()
+        return user.tg_id if user else None
+
+    async def get_id_by_tg_id(self, tg_id):
+        query = select(UsersOrm).filter_by(tg_id=tg_id)
+        result = await self.session.execute(query)
+        user = result.scalars().first()
+        return user.id if user else None

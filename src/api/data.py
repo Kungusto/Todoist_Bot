@@ -1,10 +1,14 @@
-﻿from src.schemas.tasks_first_step import TaskStepOneAdd
+﻿import asyncio
+
+from src.repositories.base import BaseRepository
+from src.schemas.tasks_first_step import TaskStepOneAdd
 from datetime import datetime
 from src.schemas.users import UserAdd, UserEdit
 from src.utils.init_dbmanager import get_db
+from src.repositories import users
 
 class UserNotFoundError(Exception):
-    """Исключение, выбрасываемое, если пользователь не найден по tg_id."""
+    """Исключение, выбрасываемое, если пользователь не найден."""
     def __init__(self, message):
         self.message = f"Пользователь с {message} не найден."
         super().__init__(self.message)
@@ -14,10 +18,9 @@ async def get_task():
     from src.api import setup
     from src.api.register import Register
     async for db in get_db():
-        result = await db.tasks_frst_stp.get_filtered(user_id=setup.user_id)
-        print(result)
+        result = await db.tasks_frst_stp.get_filtered(user_id=setup.id)
         tasks_dict = []
-
+        print(result)
         for task in result:
             task_data = [
                 task.title,
@@ -29,7 +32,7 @@ async def get_task():
             tasks_dict.append(task_data)
 
         setup.task_buttons = tasks_dict
-
+        print(f"Загружены задачи: {tasks_dict}")
         # Регистрация задач
         register = Register()
         register.register_all()
@@ -40,7 +43,7 @@ async def set_task():
     """Синхронизирует задачи: добавляет, обновляет и удаляет лишние."""
     from src.api import setup
     async for db in get_db():
-        existing_tasks = await db.tasks_frst_stp.get_filtered(user_id=setup.user_id)
+        existing_tasks = await db.tasks_frst_stp.get_filtered(user_id=setup.id)
         existing_titles = {task.title for task in existing_tasks}
 
         new_tasks = {task[0]: task for task in setup.task_buttons}  # Заголовок -> Данные задачи
@@ -115,9 +118,8 @@ async def set_task():
                     complation_due = None
 
                 new_task = TaskStepOneAdd(
-                    user_id=setup.user_id,
+                    user_id=setup.id,
                     title=title,
-                    description=None,
                     complation_due=complation_due,
                     priority=priority,
                     status=status
@@ -132,11 +134,34 @@ async def set_task():
 
 async def get_user_by_tg_id():
     from src.api.setup import user_id as tg_id
-    print(tg_id)
     async for db in get_db():
         user = await db.users.get_filtered(tg_id=tg_id)
         if user:
-            return user[0]  # Берём первого пользователя из списка
+            user = user[0]
+            print(user)
+            return user
+        raise UserNotFoundError(f"tg_id {tg_id}")
+
+async def get_tg_id_by_id():
+    from src.api.setup import id
+    async for db in get_db():
+        user = await db.users.get_filtered(id=id)
+        if user:
+            users_repo = users.UsersRepository(db.session)
+            user_id = await users_repo.get_tg_id_by_id(user[0].id)
+            print(user_id)
+            return user_id
+        raise UserNotFoundError(f"id {id}")
+
+async def get_id_by_tg_id():
+    from src.api.setup import user_id as tg_id
+    async for db in get_db():
+        user = await db.users.get_filtered(tg_id=tg_id)
+        if user:
+            users_repo = users.UsersRepository(db.session)
+            user_id = await users_repo.get_id_by_tg_id(user[0].tg_id)
+            print(user_id)
+            return user_id
         raise UserNotFoundError(f"tg_id {tg_id}")
 
 async def get_user_by_nickname(nickname: str):
@@ -178,3 +203,9 @@ async def set_user():
             await db.commit()
             print(f"Добавлен новый пользователь с tg_id {user_id}")
         return None
+
+# async def main():
+#     await get_task()
+#
+# if __name__ == '__main__':
+#     asyncio.run(main())
