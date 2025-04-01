@@ -127,7 +127,7 @@ class Auth:
             setup.id = int(user.id)
             print(f"Айди колонки пользователя: {setup.id}")
             print("До", setup.task_buttons)
-            setup.task_buttons = await get_task()
+            await get_task()
             await message.answer(f"С возвращением, {user.nickname}!", reply_markup=setup.nav_keyboard)
 
             asyncio.create_task(delete_task())
@@ -206,7 +206,7 @@ class Auth:
         setup.nickname = user.nickname
         setup.password = user.password
         setup.user_id = str(user.tg_id)
-        setup.task_buttons = await get_task()
+        await get_task()
 
         await set_user()
         await message.answer(f"✅ Успешный вход! Привет, {user.nickname}.", reply_markup=setup.nav_keyboard)

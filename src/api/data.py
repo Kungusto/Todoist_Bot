@@ -1,8 +1,10 @@
 ﻿import asyncio
 
-from src.repositories.base import BaseRepository
+from src.schemas.notifications import NoficicationAdd
 from src.schemas.tasks_first_step import TaskStepOneAdd
 from datetime import datetime
+
+from src.schemas.tasks_second_step import TaskStepTwoAdd
 from src.schemas.users import UserAdd, UserEdit
 from src.utils.init_dbmanager import get_db
 from src.repositories import users
@@ -20,7 +22,6 @@ async def get_task():
     async for db in get_db():
         result = await db.tasks_frst_stp.get_filtered(user_id=setup.id)
         tasks_dict = []
-        print(result)
         for task in result:
             task_data = [
                 task.title,
@@ -32,11 +33,11 @@ async def get_task():
             tasks_dict.append(task_data)
 
         setup.task_buttons = tasks_dict
+        await get_subtask()
         print(f"Загружены задачи: {tasks_dict}")
         # Регистрация задач
         register = Register()
         register.register_all()
-
         return tasks_dict
 
 async def set_task():
@@ -131,6 +132,82 @@ async def set_task():
                 await db.tasks_frst_stp.add(task)
             await db.commit()
             print("Добавлены новые задачи:", [task.title for task in tasks_to_add])
+        await set_subtask()
+
+async def get_subtask():
+    """Загружает подзадачи из БД и добавляет их в соответствующие задачи."""
+    from src.api import setup
+    async for db in get_db():
+        result = await db.tasks_second_stp.get_filtered()
+        subtasks_dict = {}
+
+        for subtask in result:
+            if subtask.id_super_task not in subtasks_dict:
+                subtasks_dict[subtask.id_super_task] = []
+            subtasks_dict[subtask.id_super_task].append(subtask.title)
+
+        for task in setup.task_buttons:
+            task_id = await db.tasks_frst_stp.get_filtered(title=task[0])
+            if task_id and task_id[0].id in subtasks_dict:
+                task[1] = subtasks_dict[task_id[0].id]
+            else:
+                task[1] = []
+
+        print(f"Загружены подзадачи: {subtasks_dict}")
+        return setup.task_buttons
+
+async def set_subtask():
+    """Синхронизирует подзадачи: добавляет, обновляет и удаляет лишние."""
+    from src.api import setup
+    async for db in get_db():
+        existing_subtasks = await db.tasks_second_stp.get_filtered()
+        existing_subtasks_dict = {subtask.id: subtask for subtask in existing_subtasks}
+
+        new_subtasks = []
+        updated_subtasks = []
+
+        for task in setup.task_buttons:
+            task_id = await db.tasks_frst_stp.get_filtered(title=task[0])
+            if not task_id:
+                continue
+            task_id = task_id[0].id
+
+            existing_task_subtasks = {s.title: s for s in existing_subtasks if s.id_super_task == task_id}
+            new_task_subtasks = set(task[1])
+
+            # Подзадачи для удаления (только для текущей задачи)
+            deleted_subtasks = [subtask.id for subtask in existing_task_subtasks.values() if
+                                subtask.title not in new_task_subtasks]
+
+            # Подзадачи для добавления
+            for subtask_title in new_task_subtasks:
+                if subtask_title not in existing_task_subtasks:
+                    new_subtasks.append(TaskStepTwoAdd(id_super_task=task_id, title=subtask_title))
+                elif existing_task_subtasks[subtask_title].title != subtask_title:
+                    updated_subtasks.append((existing_task_subtasks[subtask_title], subtask_title))
+
+            # Удаляем подзадачи, которых нет в setup.task_buttons
+            if deleted_subtasks:
+                for subtask_id in deleted_subtasks:
+                    await db.tasks_second_stp.delete_filtered(id=subtask_id)
+                await db.commit()
+                print(
+                    f"Удалены подзадачи: {[existing_subtasks_dict[subtask_id].title for subtask_id in deleted_subtasks]}")
+
+        # Обновляем подзадачи
+        if updated_subtasks:
+            for subtask, new_title in updated_subtasks:
+                subtask.title = new_title
+                await db.tasks_second_stp.edit(subtask, id=subtask.id)
+            await db.commit()
+            print(f"Обновлены подзадачи: {[subtask.title for subtask, _ in updated_subtasks]}")
+
+        # Добавляем новые подзадачи
+        if new_subtasks:
+            for subtask in new_subtasks:
+                await db.tasks_second_stp.add(subtask)
+            await db.commit()
+            print(f"Добавлены новые подзадачи: {[subtask.title for subtask in new_subtasks]}")
 
 async def get_user_by_tg_id():
     from src.api.setup import user_id as tg_id
@@ -204,8 +281,68 @@ async def set_user():
             print(f"Добавлен новый пользователь с tg_id {user_id}")
         return None
 
-# async def main():
-#     await get_task()
-#
-# if __name__ == '__main__':
-#     asyncio.run(main())
+async def get_notifications():
+    """Загружает уведомления из БД в setup.notifications_button."""
+    from src.api import setup
+    async for db in get_db():
+        result = await db.notifications.get_filtered(user_id=setup.id)
+        notifications_list = [[notification.title, notification.time.strftime("%Y-%m-%d-%H-%M")] for notification in result]
+
+        setup.notifications_button = notifications_list
+        print(f"Загружены уведомления: {notifications_list}")
+        return notifications_list
+
+
+async def set_notifications():
+    """Синхронизирует уведомления: добавляет, обновляет и удаляет лишние."""
+    from src.api import setup
+    async for db in get_db():
+        existing_notifications = await db.notifications.get_filtered(user_id=setup.id)
+        existing_titles = {notification.title for notification in existing_notifications}
+
+        new_notifications = {notif[0]: notif for notif in setup.notifications_button}  # Заголовок -> Данные уведомления
+
+        notifications_to_add = []
+        notifications_to_delete = []
+
+        # Определяем уведомления для удаления
+        for notification in existing_notifications:
+            if notification.title not in new_notifications:
+                notifications_to_delete.append(notification)
+
+        # Удаляем уведомления, которых нет в setup.notifications_button
+        if notifications_to_delete:
+            for notification in notifications_to_delete:
+                await db.notifications.delete_filtered(id=notification.id)
+            await db.commit()
+            print(f"Удалены уведомления: {[notification.title for notification in notifications_to_delete]}")
+
+        # Добавляем новые уведомления
+        for title, notif_data in new_notifications.items():
+            if title not in existing_titles:
+                _, time_str = notif_data
+                try:
+                    notif_time = datetime.strptime(time_str, "%Y-%m-%d-%H-%M")
+                except Exception as e:
+                    print(f"Ошибка преобразования даты ({time_str}):", e)
+                    notif_time = None
+
+                new_notification = NoficicationAdd(
+                    user_id=setup.id,
+                    title=title,
+                    time=notif_time
+                )
+                notifications_to_add.append(new_notification)
+
+        if notifications_to_add:
+            for notification in notifications_to_add:
+                await db.notifications.add(notification)
+            await db.commit()
+            print(f"Добавлены новые уведомления: {[notification.title for notification in notifications_to_add]}")
+
+
+async def main():
+    await get_notifications()
+
+if __name__ == '__main__':
+    asyncio.run(main())

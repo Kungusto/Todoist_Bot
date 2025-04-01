@@ -4,6 +4,7 @@ from aiogram.types import CallbackQuery
 from src.api.handlers import ButtonNavHandler
 from src.api.register import Register
 
+
 class Misc:
     async def misc_notifications(self, callback: CallbackQuery):
         from src.api import setup
@@ -91,8 +92,7 @@ class FilterTask:
         tasks = [task for task in setup.task_buttons if task[3] == 1 or task[3] == 2]
 
         # Выводим сообщение после фильтрации
-        await callback.message.answer(
-            "🔵 *Активные задачи отфильтрованы*.",
+        await callback.message.answer("🔵 *Активные задачи отфильтрованы*",
             parse_mode="MarkdownV2"
         )
 
@@ -124,7 +124,7 @@ class FilterTask:
 
         # Выводим сообщение после фильтрации
         await callback.message.answer(
-            "⏳ *Просроченные задачи отфильтрованы*.",
+            "⏳ *Просроченные задачи отфильтрованы*",
             parse_mode="MarkdownV2"
         )
 
@@ -139,7 +139,7 @@ class FilterTask:
 
         # Выводим сообщение после фильтрации
         await callback.message.answer(
-            "⚠ *Задачи с высоким приоритетом отфильтрованы*.",
+            "⚠ *Задачи с высоким приоритетом отфильтрованы*",
             parse_mode="MarkdownV2"
         )
 
@@ -156,7 +156,7 @@ class FilterTask:
 
         # Выводим сообщение после фильтрации
         await callback.message.answer(
-            "📅 *Задачи на сегодня отфильтрованы*.",
+            "📅 *Задачи на сегодня отфильтрованы*",
             parse_mode="MarkdownV2"
         )
 
@@ -165,13 +165,13 @@ class FilterTask:
         await callback.answer()
 
     async def get_all_tasks(self, callback: CallbackQuery):
-        """Убирает фильтрацию и показывает все задачи."""
+        """Убирает фильтрацию и показывает все задачи"""
         from src.api import setup
         tasks = setup.task_buttons
 
         # Выводим сообщение после снятия фильтрации
         await callback.message.answer(
-            "📋 *Все задачи отображаются*.",
+            "📋 *Все задачи отображаются*",
             parse_mode="MarkdownV2"
         )
 
@@ -185,20 +185,20 @@ class Settings:
         await callback.answer()
 
     async def set_time_format(self, callback: CallbackQuery):
-        await callback.message.answer("⏰ Формат времени изменён! Выберите формат: 24ч / 12ч.")
+        await callback.message.answer("⏰ Формат времени изменён! Выберите формат: 24ч / 12ч")
         await callback.answer()
 
     async def set_auto_delete(self, callback: CallbackQuery):
-        await callback.message.answer("🗑 Настройки автоудаления завершённых задач: 7/30 дней.")
+        await callback.message.answer("🗑 Настройки автоудаления завершённых задач: 7/30 дней")
         await callback.answer()
 
     async def set_ai(self, callback: CallbackQuery):
         from src.api import setup
         is_ai = "выключён" if setup.settings["ai"] else "включён"
         setup.settings["ai"] = not setup.settings["ai"]
-        await callback.message.answer(f"Режим искусственного интеллекта {is_ai}.")
+        await callback.message.answer(f"Режим искусственного интеллекта {is_ai}")
         await callback.answer()
 
     async def set_language(self, callback: CallbackQuery):
-        await callback.message.answer("🌐 Выберите язык интерфейса.")
+        await callback.message.answer("🌐 Выберите язык интерфейса")
         await callback.answer()

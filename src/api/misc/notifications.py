@@ -6,25 +6,6 @@ from aiogram.types import CallbackQuery
 from src.utils.init_dbmanager import get_db
 
 class Notifications:
-    # async def notifications():
-    #     from src.api import setup
-    #
-    #     #     while True :
-    #     #         notifications = setup.notifications
-    #     #         tasks = setup.task_buttons
-    #     #         current_time = datetime.now("%Y-%m-%d-%H-%M-%S")
-    #     #         for task in tasks:
-    #     #             if datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S") >= current_time :
-    #     #                 ...
-    #     #         asyncio.sleep(60)
-    #     while True:
-    #         notifications = setup.notifications
-    #         tasks = setup.task_buttons
-    #         current_time = datetime.now("%Y-%m-%d-%H-%M-%S")
-    #         for task in tasks:
-    #             if datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S") >= current_time:
-    #                 ...
-    #         asyncio.sleep(60)
 
     def __init__(self, callback: CallbackQuery):
         self.callback = callback
@@ -33,7 +14,7 @@ class Notifications:
         while True:
             from src.api import setup
             for task in setup.task_buttons:
-                if datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S") < datetime.now():
+                if datetime.strptime(task[4], "%Y-%m-%d-%H-%M") < datetime.now():
                     if setup.settings["notifications"]: # <-- обязательно!
                         await self.callback.message.answer(f"*Просрочена задача: *{task[0]}!", parse_mode="MarkdownV2")# <-- обязательно!
                     setup.notifications_button.append(f"*Просрочена задача: *{task[0]}!")# <-- обязательно!
@@ -43,7 +24,7 @@ class Notifications:
         while True:
             from src.api import setup
             for task in setup.task_buttons:
-                if datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S") < datetime.now():
+                if datetime.strptime(task[4], "%Y-%m-%d-%H-%M") < datetime.now():
                     await asyncio.sleep(60)  # Временный заглушка (добавишь логику позже)
                 #потом допишешь по аналогии с task_time_out
                 
