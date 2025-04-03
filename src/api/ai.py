@@ -3,12 +3,17 @@ import json
 import ollama
 from datetime import datetime, timedelta
 import re
+from src.utils.timezone_utils import get_user_timezone
+
 class AI:
     def __init__(self, prompt: str):
         self.prompt = prompt
 
     async def get_today_data(self):
-        today = datetime.today()
+        """Возвращает сегодняшнюю дату и время с учётом часового пояса пользователя."""
+        user_tz = await get_user_timezone()  # Получаем часовой пояс пользователя
+        today = datetime.now(user_tz)  # Используем текущее время в этом часовом поясе
+        print(today)
         return today.strftime("%Y-%m-%d-%H-%M-%S")
 
     async def get_data(self):
@@ -115,3 +120,10 @@ class AI:
         except json.JSONDecodeError:
             print("Ошибка: Ollama вернула некорректный JSON", answer)
             return None
+
+# async def main():
+#     ai = AI("Сходить к врачу завтра на машине")
+#     await ai.get_data()
+#
+# if __name__ == "__main__":
+#     asyncio.run(main())

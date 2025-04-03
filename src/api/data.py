@@ -1,5 +1,6 @@
 ﻿import asyncio
 
+from src.schemas._settings import SettingEdit, SettingAdd
 from src.schemas.notifications import NoficicationAdd
 from src.schemas.tasks_first_step import TaskStepOneAdd
 from datetime import datetime
@@ -292,7 +293,6 @@ async def get_notifications():
         print(f"Загружены уведомления: {notifications_list}")
         return notifications_list
 
-
 async def set_notifications():
     """Синхронизирует уведомления: добавляет, обновляет и удаляет лишние."""
     from src.api import setup
@@ -341,8 +341,76 @@ async def set_notifications():
             print(f"Добавлены новые уведомления: {[notification.title for notification in notifications_to_add]}")
 
 
+async def get_settings():
+    """Загружает настройки пользователя из БД в setup.settings."""
+    from src.api import setup
+    async for db in get_db():
+        result = await db.settings.get_filtered(user_id=setup.id)
+        if result:
+            user_settings = result[0]  # У каждого пользователя одна запись с настройками
+            setup.settings = {
+                "notifications": user_settings.notifications,
+                "time_format": user_settings.time_format,
+                "auto_delete": user_settings.auto_delete,
+                "ai": user_settings.ai,
+                "task_sort": user_settings.task_sort,
+                "task_filter": user_settings.task_filter,
+                "language": user_settings.language,
+            }
+        else:
+            setup.settings = {
+                "notifications": False,
+                "time_format": 24,
+                "auto_delete": 7,
+                "ai": True,
+                "task_sort": 4,
+                "task_filter": 5,
+                "language": "Russian",
+            }
+
+        print(f"Загружены настройки: {setup.settings}")
+        return setup.settings
+
+
+async def set_settings():
+    """Синхронизирует настройки: добавляет, обновляет или сбрасывает до дефолтных значений."""
+    from src.api import setup
+    async for db in get_db():
+        existing_settings = await db.settings.get_filtered(user_id=setup.id)
+
+        if existing_settings:
+            # Обновляем существующие настройки
+            settings_data = SettingEdit(
+                notifications=setup.settings.get("notifications"),
+                time_format=setup.settings.get("time_format"),
+                auto_delete=setup.settings.get("auto_delete"),
+                ai=setup.settings.get("ai"),
+                task_sort=setup.settings.get("task_sort"),
+                task_filter=setup.settings.get("task_filter"),
+                language=setup.settings.get("language"),
+            )
+            await db.settings.update_filtered(user_id=setup.id, obj_in=settings_data)
+            print(f"Обновлены настройки: {setup.settings}")
+        else:
+            # Создаём новые настройки, если их не было
+            settings_data = SettingAdd(
+                user_id=setup.id,
+                notifications=setup.settings.get("notifications", False),
+                time_format=setup.settings.get("time_format", 24),
+                auto_delete=setup.settings.get("auto_delete", 7),
+                ai=setup.settings.get("ai", True),
+                task_sort=setup.settings.get("task_sort", 4),
+                task_filter=setup.settings.get("task_filter", 5),
+                language=setup.settings.get("language", "Russian"),
+            )
+            await db.settings.add(settings_data)
+            print(f"Добавлены новые настройки: {setup.settings}")
+
+        await db.commit()
+
+
 async def main():
-    await get_notifications()
+    await set_settings()
 
 if __name__ == '__main__':
     asyncio.run(main())

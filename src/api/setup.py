@@ -139,12 +139,15 @@ misc_notifications_keyboard = InlineKeyboardMarkup(
     ]
 )
 settings = {
-    "notifications" : False,
-    "time_format" : 24,
-    "auto_delete" : 7,
-    "ai" : True,
-    "language" : "Russian"
+    "notifications": False,
+    "time_format": 24,
+    "auto_delete": 7,
+    "ai": True,
+    "task_sort": 4,
+    "task_filter": 5,
+    "language": "Russian"
 }
+
 
 notification_fun = "🔕 Отключить уведомления" if settings["notifications"] == True else "🔔 Включить уведомления"
 # Кнопки для "Настроек"
@@ -216,7 +219,7 @@ notifications_button = [
     ["Задача Полить цветы просрочена!", "2024-08-21-10-27"]
 ]
 
-id = 12
+id = 16
 user_id = -1
 nickname = -1
 password = -1

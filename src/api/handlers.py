@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 from src.api.userInputHandler import UserInputHandler
 from src.api.data import *
 import random
+
 from src.utils.escape_md import *
 from src.api.misc.auto_delete import *
 
@@ -23,7 +24,7 @@ class CommandHandler(BaseHandler):
         from src.api import setup
         setup.current_state = 1
         setup.user_id = str(message.from_user.id)
-        auth = Auth()
+        auth = Auth(self.bot, self.dispatcher)
         await auth.first(message)
 
     async def help_command(self, message: Message):
@@ -115,27 +116,35 @@ class ButtonNavHandler(BaseHandler):
             await callback.answer()
 
 
-class Auth:
+class Auth(BaseHandler):
     async def first(self, message: Message):
         from src.api import setup
         try:
             setup.user_id = str(message.from_user.id)
-            print(f"Айди пользователя: {setup.user_id}")
             user = await get_user_by_tg_id()
             setup.nickname = user.nickname
             setup.password = user.password
             setup.id = int(user.id)
-            print(f"Айди колонки пользователя: {setup.id}")
-            print("До", setup.task_buttons)
+
             await get_task()
-            await message.answer(f"С возвращением, {user.nickname}!", reply_markup=setup.nav_keyboard)
+            await message.answer(
+                f"*👋 С возвращением,* `{escape_md(user.nickname)}`\n\n"
+                f"🔹 *Ваши задачи загружены* \\- выберите нужную",
+                reply_markup=setup.nav_keyboard,
+                parse_mode="MarkdownV2"
+            )
+
+            button_nav_handler = ButtonNavHandler(self.bot, self.dispatcher)
+            await button_nav_handler.list_tasks(message)
 
             asyncio.create_task(delete_task())
-            print("После", setup.task_buttons)
         except UserNotFoundError:
             await message.answer(
-                "**Привет!** Я твой *Todoist-бот*.\nДля начала работы нужно войти или зарегистрироваться.",
-                reply_markup=setup.auth_keyboard
+                f"*Привет\\!* 👋\n"
+                f"Я твой *Todoist\\-бот* 📋\n\n"
+                f"Для начала работы *войдите* или *зарегистрируйтесь*\\.",
+                reply_markup=setup.auth_keyboard,
+                parse_mode="MarkdownV2"
             )
 
     async def enter(self, callback: CallbackQuery, state: FSMContext):
@@ -145,22 +154,28 @@ class Auth:
         await callback.answer()
 
     async def process_enter(self, message: Message, state: FSMContext):
-        """Обрабатывает логин пользователя и запрашивает пароль."""
         try:
             users = await get_user_by_nickname(message.text)
 
             if not users:
-                await message.answer("❌ Пользователь не найден. Попробуйте снова или зарегистрируйтесь.")
+                await message.answer(
+                    f"❌ *Ошибка:* Пользователь `{escape_md(message.text)}` не найден\\.\n"
+                    f"Попробуйте снова или *зарегистрируйтесь*\\.",
+                    parse_mode="MarkdownV2"
+                )
                 return
 
             await state.update_data(nickname=message.text)
-            await message.answer("Введите ваш пароль:")
+            await message.answer("*Введите ваш пароль:* 🔑", parse_mode="MarkdownV2")
             await state.set_state(UserInputHandler.waiting_for_enter_password)
         except UserNotFoundError:
-            await message.answer("❌ Пользователь не найден. Попробуйте снова или зарегистрируйтесь.")
+            await message.answer(
+                f"❌ *Ошибка:* Пользователь `{escape_md(message.text)}` не найден\\.\n"
+                f"Попробуйте снова или *зарегистрируйтесь*\\.",
+                parse_mode="MarkdownV2"
+            )
 
     async def process_enter_password(self, message: Message, state: FSMContext):
-        """Проверяет пароль и отправляет код подтверждения."""
         from src.api import setup
 
         user_data = await state.get_data()
@@ -169,66 +184,83 @@ class Auth:
         matching_users = [u for u in users if u.password == message.text]
 
         if not matching_users:
-            await message.answer("❌ Неверный пароль. Попробуйте снова.")
+            await message.answer(
+                f"❌ *Ошибка:* Неверный пароль для `{escape_md(user_data['nickname'])}`\\.\n"
+                f"Попробуйте снова\\.",
+                parse_mode="MarkdownV2"
+            )
             return
 
-        # Генерируем уникальный код для каждого пользователя
         confirmation_codes = {}
         for user in matching_users:
             confirmation_code = str(random.randint(100000, 999999))
-            confirmation_codes[user.tg_id] = confirmation_code  # Привязываем код к ID пользователя
+            confirmation_codes[user.tg_id] = confirmation_code
             setup.active_codes[user.tg_id] = confirmation_code
 
             try:
-                await message.bot.send_message(user.tg_id, f"🔐 Ваш код подтверждения: {confirmation_code}")
-            except Exception:
-                pass  # Если не удалось отправить, просто продолжаем
+                requester_username = message.from_user.username  # Получаем username пользователя, запрашивающего код
+                requester_id = message.from_user.id  # Получаем ID пользователя
 
-        await message.answer("📩 Код подтверждения отправлен. Введите его ниже:")
+                await message.bot.send_message(
+                    user.tg_id,
+                    f"🔐 *Ваш код подтверждения:* `{confirmation_code}`\n\n"
+                    f"👤 Запросил: @{requester_username if requester_username else 'ID: ' + str(requester_id)}\n"
+                    "⚠️ Если вы не запрашивали этот код, проигнорируйте это сообщение и не передавайте код никому.",
+                    parse_mode="MarkdownV2"
+                )
+
+            except Exception:
+                pass
+
+        await message.answer(
+            f"📩 *Код подтверждения отправлен*\\. Введите его ниже:",
+            parse_mode="MarkdownV2"
+        )
         await state.set_state(UserInputHandler.waiting_for_code)
 
     async def process_enter_code(self, message: Message, state: FSMContext):
-        """Проверяет введённый код и входит в систему."""
         from src.api import setup
 
         user_data = await state.get_data()
         users = await get_user_by_nickname(user_data['nickname'])
 
-        # Ищем пользователя, который ввёл правильный код
         matching_users = [u for u in users if setup.active_codes.get(u.tg_id) == message.text]
 
         if not matching_users:
-            await message.answer("❌ Ошибка: Неверный код или код не запрашивался.")
+            await message.answer(
+                f"❌ *Ошибка:* Неверный код или код не запрашивался",
+                parse_mode="MarkdownV2"
+            )
             return
 
-        # Авторизуем первого совпавшего пользователя
         user = matching_users[0]
         setup.nickname = user.nickname
         setup.password = user.password
         setup.user_id = str(user.tg_id)
         await get_task()
-
         await set_user()
-        await message.answer(f"✅ Успешный вход! Привет, {user.nickname}.", reply_markup=setup.nav_keyboard)
+
+        await message.answer(
+            f"✅ *Успешный вход!* 🎉\n\n"
+            f"Привет, `{escape_md(user.nickname)}`",
+            reply_markup=setup.nav_keyboard,
+            parse_mode="MarkdownV2"
+        )
         await state.clear()
 
-        # Удаляем использованный код
         del setup.active_codes[user.tg_id]
 
     async def register(self, callback: CallbackQuery, state: FSMContext):
-        """Начинает процесс регистрации."""
-        await callback.message.answer("Введите желаемый логин:")
+        await callback.message.answer("*Введите желаемый логин:* 📝", parse_mode="MarkdownV2")
         await state.set_state(UserInputHandler.waiting_for_reg)
         await callback.answer()
 
     async def process_register(self, message: Message, state: FSMContext):
-        """Переходит к вводу пароля."""
         await state.update_data(nickname=message.text)
-        await message.answer("Введите пароль:")
+        await message.answer("*Введите пароль:* 🔑", parse_mode="MarkdownV2")
         await state.set_state(UserInputHandler.waiting_for_reg_password)
 
     async def process_register_password(self, message: Message, state: FSMContext):
-        """Сохраняет пользователя и завершает регистрацию."""
         user_data = await state.get_data()
         from src.api import setup
 
@@ -236,11 +268,16 @@ class Auth:
         setup.password = message.text
         setup.user_id = str(message.from_user.id)
 
-        await set_user()  # Сохранение в базу
+        await set_user()
 
-        await message.answer("✅ Вы успешно зарегистрированы и автоматически вошли в систему!",
-                             reply_markup=setup.nav_keyboard)
+        await message.answer(
+            f"✅ *Вы успешно зарегистрированы\\!* 🎉\n\n"
+            f"Теперь вы вошли в систему как `{escape_md(setup.nickname)}`\\.",
+            reply_markup=setup.nav_keyboard,
+            parse_mode="MarkdownV2"
+        )
         await state.clear()
+
 
 class ButtonEditTaskHandler(BaseHandler):
     async def edit_task_selected(self, callback: CallbackQuery, state: FSMContext):

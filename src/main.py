@@ -22,7 +22,7 @@ router = Router()
 
 handler = CommandHandler(bot, dp)
 
-auth = Auth()
+auth = Auth(bot, dp)
 button_nav_handler = ButtonNavHandler(bot, dp)
 button_edit_task_handler = ButtonEditTaskHandler(bot, dp)
 register = Register(dp, router, handler, button_nav_handler, button_edit_task_handler, auth)
@@ -38,8 +38,8 @@ misc_register.register_all()
 notifications = Notifications(router.callback_query)
 
 async def main():
-    await dp.start_polling(bot)
     await asyncio.create_task(notifications.start_all_tasks())
+    await dp.start_polling(bot)
 
 if __name__ == '__main__':
     try:
