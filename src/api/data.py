@@ -173,6 +173,9 @@ async def set_subtask():
                 continue
             task_id = task_id[0].id
 
+            if not task[1]:
+                continue
+
             existing_task_subtasks = {s.title: s for s in existing_subtasks if s.id_super_task == task_id}
             new_task_subtasks = set(task[1])
 
@@ -285,11 +288,14 @@ async def set_user():
 async def get_notifications():
     """Загружает уведомления из БД в setup.notifications_button."""
     from src.api import setup
+    from src.api.misc.register import Register
     async for db in get_db():
         result = await db.notifications.get_filtered(user_id=setup.id)
         notifications_list = [[notification.title, notification.time.strftime("%Y-%m-%d-%H-%M")] for notification in result]
 
         setup.notifications_button = notifications_list
+        register = Register()
+        register.register_all()
         print(f"Загружены уведомления: {notifications_list}")
         return notifications_list
 
@@ -340,7 +346,6 @@ async def set_notifications():
             await db.commit()
             print(f"Добавлены новые уведомления: {[notification.title for notification in notifications_to_add]}")
 
-
 async def get_settings():
     """Загружает настройки пользователя из БД в setup.settings."""
     from src.api import setup
@@ -370,7 +375,6 @@ async def get_settings():
 
         print(f"Загружены настройки: {setup.settings}")
         return setup.settings
-
 
 async def set_settings():
     """Синхронизирует настройки: добавляет, обновляет или сбрасывает до дефолтных значений."""
@@ -408,9 +412,8 @@ async def set_settings():
 
         await db.commit()
 
-
-async def main():
-    await set_settings()
-
-if __name__ == '__main__':
-    asyncio.run(main())
+# async def main():
+#     await set_settings()
+#
+# if __name__ == '__main__':
+#     asyncio.run(main())

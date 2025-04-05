@@ -4,16 +4,18 @@ import sys
 from pathlib import Path
 
 from aiogram import Bot, Dispatcher, Router
-sys.path.append(str(Path(__file__).parent.parent))
-logging.basicConfig(level=logging.INFO)
 
 from src.api.handlers import CommandHandler, ButtonNavHandler, ButtonEditTaskHandler, Auth
 from src.api.register import Register
 from src.api.misc.register import Register as MiscRegister
 from src.api.misc.handlers import Misc, Sort_Task, FilterTask, Settings
 from src.api.misc.notifications import Notifications
+from src.api.misc.handlers import Notification as MiscNotifications
+
 from src.api import setup
 
+sys.path.append(str(Path(__file__).parent.parent))
+logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=setup.token)
 
@@ -32,14 +34,18 @@ misc = Misc()
 sort = Sort_Task(button_nav_handler, register)
 filter = FilterTask(button_nav_handler, register)
 settings = Settings()
-misc_register = MiscRegister(dp, router, misc, sort, filter, settings)
+misc_notification = MiscNotifications()
+misc_register = MiscRegister(dp, router, misc, sort, filter, settings, misc_notification)
 misc_register.register_all()
 
-notifications = Notifications(router.callback_query)
+notifications = Notifications(bot)
 
 async def main():
-    await asyncio.create_task(notifications.start_all_tasks())
-    await dp.start_polling(bot)
+    await asyncio.gather(
+        notifications.start_all_tasks(),
+        dp.start_polling(bot)
+    )
+
 
 if __name__ == '__main__':
     try:

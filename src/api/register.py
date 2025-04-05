@@ -253,6 +253,7 @@ class Register:
         """Обрабатывает ввод пользователя и добавляет дедлайн."""
         from src.api import setup
         from src.api.ai import AI
+        from src.utils.timezone_utils import get_format_deadline
         print("handle_user_input_deadline")
         user_data = await state.get_data()
         task_index = user_data.get("deadline_index")
@@ -272,13 +273,14 @@ class Register:
             await message.answer("⚠ Пожалуйста, введите корректную дату выполнения задачи!")
             return
 
-        deadline_text = deadline_text.strftime("%Y-%m-%d %H:%M:%S") if isinstance(deadline_text, datetime) else str(deadline_text)
-        #deadline_text = deadline_text.replace("-", "\\-")
+        if isinstance(deadline_text, datetime):
+            # Форматируем дедлайн в соответствии с настройками времени
+            deadline_text = get_format_deadline(deadline_text)
+        else:
+            # Если это не datetime, просто приводим к строке
+            deadline_text = str(deadline_text)
 
-        # Проверка на существование дедлайна
-        # if len(setup.task_buttons[task_index]) <= 4:
-        #     setup.task_buttons[task_index].append(deadline_text)
-
+            # Обновляем дедлайн задачи
         setup.task_buttons[task_index][4] = deadline_text
 
         self.register_task("all")

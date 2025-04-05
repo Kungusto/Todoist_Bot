@@ -3,7 +3,7 @@ import json
 import ollama
 from datetime import datetime, timedelta
 import re
-from src.utils.timezone_utils import get_user_timezone
+from src.utils.timezone_utils import get_user_timezone, get_format_deadline
 
 class AI:
     def __init__(self, prompt: str):
@@ -24,7 +24,6 @@ class AI:
         client = ollama.Client(host="http://localhost:11434")
         today_data = await self.get_today_data()
 
-        print(today_data)
 
         response = client.chat(model="qwen2.5-coder:latest", messages=[
             {"role": "system", "content": "Ты нейросеть, которая отвечает только датой в формате YYYY-mm-DD-HH-MM."
@@ -104,13 +103,19 @@ class AI:
                 else:
                     print("Ошибка: дедлайн отсутствует. Устанавливаем стандартное значение.")
                     new_task["deadline"] = (datetime.today() + timedelta(days=3)).strftime("%Y-%m-%d-%H-%M-%S")
+                    # Если deadline в строковом формате, преобразуем в datetime перед вызовом get_format_deadline
+                if isinstance(new_task["deadline"], str):
+                    task_deadline = datetime.strptime(new_task["deadline"], "%Y-%m-%d-%H-%M-%S")
+                else:
+                    task_deadline = new_task["deadline"]
 
+                deadline = get_format_deadline(task_deadline)
                 setup.task_buttons.append([
                     new_task["title"],
                     new_task.get("subtasks", []),
                     new_task["priority"],
                     new_task["status"],
-                    new_task["deadline"]
+                    deadline
                 ])
                 print("✅ Новая задача добавлена:", new_task)
                 return new_task
