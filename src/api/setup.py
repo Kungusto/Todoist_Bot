@@ -144,7 +144,7 @@ settings = {
     "auto_delete": 7,
     "ai": True,
     "task_sort": 4,
-    "task_filter": 5,
+    "task_filter": 0,
     "language": "Russian"
 }
 

@@ -11,7 +11,7 @@ async def delete_task():
         # Проверяем каждую задачу
         for task in setup.task_buttons:
             if setup.settings["auto_delete"] == 7 and task[3] == 4:
-                deadline = datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S")
+                deadline = datetime.strptime(task[4], "%Y-%m-%d-%H-%M")
                 if deadline + timedelta(days=7) < datetime.now():
                     setup.task_buttons.remove(task)  # Удаляем задачу
                     await set_task()
@@ -20,7 +20,7 @@ async def delete_task():
                     await asyncio.sleep(60)  # Проверяем задачи каждую минуту
 
             if setup.settings["auto_delete"] == 30 and task[3] == 4:
-                deadline = datetime.strptime(task[4], "%Y-%m-%d-%H-%M-%S")
+                deadline = datetime.strptime(task[4], "%Y-%m-%d-%H-%M")
                 if deadline + timedelta(days=30) < datetime.now():
                     setup.task_buttons.remove(task)  # Удаляем задачу
                     await set_task()

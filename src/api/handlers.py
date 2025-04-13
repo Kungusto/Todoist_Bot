@@ -1,7 +1,6 @@
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 from src.api.userInputHandler import UserInputHandler
-from src.api.data import *
 import random
 
 from src.utils.escape_md import *
@@ -40,7 +39,10 @@ class CommandHandler(BaseHandler):
 class ButtonNavHandler(BaseHandler):
     async def list_tasks(self, message: Message):
         from src.api import setup
-        print("list_tasks: ", setup.task_buttons)
+        from src.api.misc.task_filtering import Filter
+        filter = Filter()
+        task_buttons = filter.get_filtered()
+        print("list_tasks: ", task_buttons)
         setup.current_state = 2
         await message.answer(
             "📋 *Мои задачи*",

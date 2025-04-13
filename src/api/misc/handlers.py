@@ -105,6 +105,14 @@ class FilterTask:
         self.nav_handler = nav_handler
         self.register = register
 
+    async def update_filter_setting(self, value: int):
+        """Обновляет метод фильтра в setup.settings и сохраняет в БД."""
+        from src.api import setup, data
+
+        setup.settings["task_filter"] = value
+        await data.set_settings()  # Сохраняем в БД
+
+
     async def get_active_tasks(self, callback: CallbackQuery):
         """Фильтрует только активные (в процессе) задачи."""
         from src.api import setup
@@ -114,7 +122,7 @@ class FilterTask:
         await callback.message.answer("🔵 *Активные задачи отфильтрованы*",
             parse_mode="MarkdownV2"
         )
-
+        await self.update_filter_setting(0)
         self.register.register_task(tasks)
         await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
@@ -126,10 +134,10 @@ class FilterTask:
 
         # Выводим сообщение после фильтрации
         await callback.message.answer(
-            "✅ *Завершённые задачи отфильтрованы*.",
+            "✅ *Завершённые задачи отфильтрованы*",
             parse_mode="MarkdownV2"
         )
-
+        await self.update_filter_setting(1)
         self.register.register_task(tasks)
         await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
@@ -146,7 +154,7 @@ class FilterTask:
             "⏳ *Просроченные задачи отфильтрованы*",
             parse_mode="MarkdownV2"
         )
-
+        await self.update_filter_setting(2)
         self.register.register_task(tasks)
         await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
@@ -161,7 +169,7 @@ class FilterTask:
             "⚠ *Задачи с высоким приоритетом отфильтрованы*",
             parse_mode="MarkdownV2"
         )
-
+        await self.update_filter_setting(3)
         self.register.register_task(tasks)
         await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
@@ -178,7 +186,7 @@ class FilterTask:
             "📅 *Задачи на сегодня отфильтрованы*",
             parse_mode="MarkdownV2"
         )
-
+        await self.update_filter_setting(4)
         self.register.register_task(tasks)
         await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
@@ -193,11 +201,10 @@ class FilterTask:
             "📋 *Все задачи отображаются*",
             parse_mode="MarkdownV2"
         )
-
+        await self.update_filter_setting(5)
         self.register.register_task("all")
         await self.nav_handler.list_tasks(callback.message)  # Переход к отображению задач
         await callback.answer()
-
 
 class Settings:
     async def disable_notifications(self, callback: CallbackQuery):
@@ -209,6 +216,7 @@ class Settings:
         await callback.message.answer("🔕 Уведомления отключены!")
 
         # Обновляем кнопки для отображения актуального состояния
+        await data.set_settings()
         await self.update_misc_settings_buttons()
 
         await callback.answer()
@@ -227,8 +235,8 @@ class Settings:
             f"⏰ Формат времени изменён! Теперь: {'24ч' if setup.settings['time_format'] == 24 else '12ч'}")
 
         # Обновляем кнопки для отображения актуального состояния
+        await data.set_settings()
         await self.update_misc_settings_buttons()
-
         await callback.answer()
 
     async def set_auto_delete(self, callback: CallbackQuery):
@@ -245,8 +253,8 @@ class Settings:
             f"🗑 Настройки автоудаления завершённых задач изменены: {setup.settings['auto_delete']} дней")
 
         # Обновляем кнопки для отображения актуального состояния
+        await data.set_settings()
         await self.update_misc_settings_buttons()
-
         await callback.answer()
 
     async def set_ai(self, callback: CallbackQuery):
@@ -260,8 +268,8 @@ class Settings:
         await callback.message.answer(f"Режим искусственного интеллекта {is_ai}")
 
         # Обновляем кнопки для отображения актуального состояния
+        await data.set_settings()
         await self.update_misc_settings_buttons()
-
         await callback.answer()
 
     async def set_language(self, callback: CallbackQuery):
@@ -277,8 +285,8 @@ class Settings:
         await callback.message.answer(f"🌐 Язык интерфейса изменён на {setup.settings['language']}")
 
         # Обновляем кнопки для отображения актуального состояния
+        await data.set_settings()
         await self.update_misc_settings_buttons()
-
         await callback.answer()
 
     async def update_misc_settings_buttons(self):

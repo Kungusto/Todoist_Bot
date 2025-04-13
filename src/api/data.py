@@ -393,7 +393,7 @@ async def set_settings():
                 task_filter=setup.settings.get("task_filter"),
                 language=setup.settings.get("language"),
             )
-            await db.settings.update_filtered(user_id=setup.id, obj_in=settings_data)
+            await db.settings.edit(settings_data)
             print(f"Обновлены настройки: {setup.settings}")
         else:
             # Создаём новые настройки, если их не было
