@@ -1,5 +1,3 @@
-import logging
-
 from aiogram import Dispatcher, Router
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
@@ -7,8 +5,9 @@ from aiogram.fsm.context import FSMContext
 from src.api.setup import commands
 from src.api.userInputHandler import UserInputHandler
 from src.api.data import *
+from src.api.ai import AI
 
-global main_dp, main_handler, main_button_handler, main_router, main_button_edit_task_handler, main_auth
+global main_dp, main_handler, main_button_handler, main_router, main_button_edit_task_handler, main_auth, tasks
 
 class Register:
     def __init__(self, dp: Dispatcher = None, router: Router = None, handler=None, button_handler=None,
@@ -69,26 +68,35 @@ class Register:
         self.dp.message.register(self.handle_user_input_subtask, UserInputHandler.waiting_for_subtask)
         self.dp.message.register(self.handle_user_input_deadline, UserInputHandler.waiting_for_deadline)
 
-    def register_task(self):
+    def register_task(self, task_buttons=None):
         from src.api import setup
+        global tasks
+
+        if task_buttons is None:
+            task_buttons = tasks
+        elif task_buttons == "all":
+            task_buttons = setup.task_buttons
+            tasks = setup.task_keyboard
+
+        # Используем оригинальные индексы задач из setup.task_buttons
+        task_indices = [setup.task_buttons.index(task) for task in task_buttons if task in setup.task_buttons]
+
         setup.task_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text=task[0], callback_data=f"task:{index}")]
-                for index, task in enumerate(setup.task_buttons)
+                [InlineKeyboardButton(text=setup.task_buttons[i][0], callback_data=f"task:{i}")]
+                for i in task_indices
             ]
         )
 
-    def register_settings(self):
+    def register_task_priority(self):
         from src.api import setup
-        setup.settings_keyboard = InlineKeyboardMarkup(
+
+        setup.task_priority_edit_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text=btn[0], callback_data=btn[1] if len(btn) > 1 else btn[0])]
                 for btn in setup.task_priority_edit_buttons
             ]
         )
-
-    def register_settings_callbacks(self):
-        pass
 
     def register_auth(self):
         from src.api import setup
@@ -105,7 +113,6 @@ class Register:
 
     def register_task_callbacks(self):
         """Регистрируем обработчик нажатий на задачи."""
-        from src.api import setup
         self.dp.callback_query.register(self.button_handler.task_selected, lambda c: c.data.startswith("task:"))
 
     def register_task_edit(self):
@@ -157,6 +164,14 @@ class Register:
     def register_task_status_callbacks(self):
         self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
                                         lambda c: c.data.startswith("change_status:"))
+        self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
+                                        lambda c: c.data.startswith("New"))
+        self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
+                                        lambda c: c.data.startswith("In_Progress"))
+        self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
+                                        lambda c: c.data.startswith("On_Hold"))
+        self.dp.callback_query.register(self.button_edit_task_handler.status_selected,
+                                        lambda c: c.data.startswith("Completed"))
 
     async def handle_user_input_task(self, message: Message, state: FSMContext):
         """Обрабатывает ввод пользователя и добавляет задачу."""
@@ -171,10 +186,13 @@ class Register:
         if not user_input:
             await message.answer("⚠ Пожалуйста, введите задачу!")
             return
+        if setup.settings["ai"]:
+            ai = AI(user_input)
+            ok = await ai.get_task()
+            if not ok: await message.answer("Ошибка добавления задачи. Попробуйте снова.")
+        else: setup.task_buttons.append([user_input, None, None, None, None])
 
-        setup.task_buttons.append([user_input, None, None, None, None])
-
-        self.register_task()
+        self.register_all()
         await message.answer(f"✅ Задача добавлена: {user_input}")
         await set_task()
         await state.clear()
@@ -199,8 +217,8 @@ class Register:
             await message.answer("⚠ Пожалуйста, введите текст для изменения задачи!")
             return
 
-        setup.task_buttons[task_index] = [user_input]
-        self.register_task()
+        setup.task_buttons[task_index][0] = user_input
+        self.register_task("all")
         await message.answer(f"✅ Задача обновлена: {user_input}")
         await set_task()
         await state.clear()
@@ -225,7 +243,8 @@ class Register:
             setup.task_buttons[task_index].append([])
 
         setup.task_buttons[task_index][1].append(subtask_text)
-        self.register_task()
+        self.register_task("all")
+        print(f"ПОдзадача: {setup.task_buttons}")
         await message.answer(f"✅ Подзадача добавлена: {subtask_text}")
         await set_task()
         await state.clear()
@@ -234,6 +253,7 @@ class Register:
         """Обрабатывает ввод пользователя и добавляет дедлайн."""
         from src.api import setup
         from src.api.ai import AI
+        from src.utils.timezone_utils import get_format_deadline
         print("handle_user_input_deadline")
         user_data = await state.get_data()
         task_index = user_data.get("deadline_index")
@@ -253,16 +273,17 @@ class Register:
             await message.answer("⚠ Пожалуйста, введите корректную дату выполнения задачи!")
             return
 
-        deadline_text = deadline_text.strftime("%Y-%m-%d %H:%M:%S") if isinstance(deadline_text, datetime) else str(deadline_text)
-        #deadline_text = deadline_text.replace("-", "\\-")
+        if isinstance(deadline_text, datetime):
+            # Форматируем дедлайн в соответствии с настройками времени
+            deadline_text = get_format_deadline(deadline_text)
+        else:
+            # Если это не datetime, просто приводим к строке
+            deadline_text = str(deadline_text)
 
-        # Проверка на существование дедлайна
-        # if len(setup.task_buttons[task_index]) <= 4:
-        #     setup.task_buttons[task_index].append(deadline_text)
-
+            # Обновляем дедлайн задачи
         setup.task_buttons[task_index][4] = deadline_text
 
-        self.register_task()
+        self.register_task("all")
         print(setup.task_buttons)
         deadline_text = deadline_text.replace("\\-", "-")
         await message.answer(f"✅ Дедлайн добавлен: {deadline_text}")
@@ -272,25 +293,19 @@ class Register:
     def register_all(self):
         """Регистрирует все команды, кнопки и обработчики FSM."""
         print("Вызов register_all()")
-        from src.api import setup
         self.register_commands()
         self.register_navigation()
         self.register_fsm_handler()
-
-        logging.info(f"Перед вызовом register_task: {setup.task_buttons}")
-        self.register_task()
+        self.register_task("all")
         self.register_task_callbacks()
-        logging.info(f"После вызова register_task: {setup.task_buttons}")
         self.register_task_edit()
         self.register_task_edit_callbacks()
-        logging.info(f"После вызова register_task_edit: {setup.task_buttons}")
         self.register_subtask_callbacks()
         self.register_task_priority_callbacks()
         self.register_task_deadline_callbacks()
-        self.register_settings()
         self.register_auth()
         self.register_auth_callbacks()
         self.register_task_status()
         self.register_task_status_callbacks()
-
-        logging.info(f"После всех вызовов: {setup.task_buttons}")
+        self.register_task_priority()
+        self.register_task_priority_callbacks()

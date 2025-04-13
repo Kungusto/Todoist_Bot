@@ -1,6 +1,10 @@
 from src.database import async_session_maker
+from src.repositories.base_tasks import BaseTasksRepository
+from src.repositories.notifications import NotificationsRepository
 from src.repositories.tasks_first_step import TasksStepOneRepository
+from src.repositories.tasks_second_step import TasksStepTwoRepository
 from src.repositories.users import UsersRepository
+from src.repositories._settings import SettingsRepository
 
 class DBManager : 
     def __init__(self, session_factory) :
@@ -10,7 +14,11 @@ class DBManager :
         self.session = self.session_factory()
         
         self.tasks_frst_stp = TasksStepOneRepository(self.session)
+        self.tasks_second_stp =  TasksStepTwoRepository(self.session)
         self.users = UsersRepository(self.session)
+        self.tasks = BaseTasksRepository(self.session)
+        self.settings = SettingsRepository(self.session)
+        self.notifications = NotificationsRepository(self.session)
 
         return self
     

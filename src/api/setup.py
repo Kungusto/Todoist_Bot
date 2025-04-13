@@ -5,7 +5,7 @@ token = "8090759361:AAGkfIL43EeWm5NJ7CZt3I8C-ReUZktRH_U"
 
 current_state = 0
 '''
-1 - это старт и хелп
+1 - это старт и помощь
 2 - это все задачи
 3 - конкретная задача
 '''
@@ -26,9 +26,24 @@ commands = [
     if callable(getattr(CommandHandler, func)) and func.endswith("_command")
 ]
 #задачи их свойства
+"""
+0 - title (Название задачи)
+1 - subtasks (Подзадачи, список)
+2 - priority (Приоритет, где 1 - низкий, 2 - средний, 3 - высокий)
+3 - status (Статус, где 1 - в процессе, 2 - завершено, 3 - отложено, 4 - завершена)
+4 - deadline (Крайний срок в формате YYYY-MM-DD)
+"""
 task_buttons = [
-    ["кота", [], 1, 1, "2030-02-20"],
-    ["Покормить кота", [], 2, 2, "2020-12-01"],
+    # ["Полить цветы", [], 1, 1, "2030-02-20-00-00-00"],
+    # ["Покормить кота", [], 2, 2, "2020-12-01-00-00-00"],
+    # ["Закончить отчёт", ["Написать ввод", "Сделать расчёты"], 3, 1, "2025-03-25-00-00-00"],
+    # ["Купить продукты", ["Молоко", "Хлеб", "Яйца"], 2, 1, "2025-03-18-00-00-00"],
+    # ["Записаться к врачу", [], 3, 3, "2025-04-10-00-00-00"],
+    # ["Позвонить маме", [], 1, 1, "2025-03-15-00-00-00"],
+    # ["Подготовиться к экзамену", ["Прочитать главы 1-3", "Решить тесты"], 3, 1, "2025-05-10-00-00-00"],
+    # ["Оплатить счета", [], 2, 1, "2025-03-28-00-00-00"],
+    # ["Прочитать книгу", [], 1, 3, "2025-06-01-00-00-00"],
+    # ["Сделать зарядку", [], 2, 1, "2025-05-14-00-00-00"],
 ]
 
 task_keyboard = InlineKeyboardMarkup(
@@ -37,7 +52,6 @@ task_keyboard = InlineKeyboardMarkup(
         for index, task in enumerate(task_buttons)
     ]
 )
-
 
 task_edit_buttons = [
     ["➡ Редактировать 🔄", "edit_task:0"],
@@ -81,20 +95,6 @@ task_status_edit_keyboard = InlineKeyboardMarkup(
     ]
 )
 
-settings_button = [
-    ["Вход", "enter"],
-    ["Регистрация", "reg"],
-]
-
-settings_keyboard = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text=btn[0], callback_data=btn[1] if len(btn) > 1 else btn[0])]
-        for btn in settings_button
-    ]
-)
-
-
-
 auth_button = [
     ["Вход", "enter"],
     ["Регистрация", "register"],
@@ -107,9 +107,124 @@ auth_keyboard = InlineKeyboardMarkup(
     ]
 )
 
-user_id = "14"
-nickname = "Deimos"
-password = "1s"
+
+# Кнопки для раздела "Прочее"
+misc_buttons = [
+    ["🔔 Уведомления", "misc_notifications"],
+    ["🔢 Сортировка задач", "misc_task_sorting"],
+    ["✅ Какие задачи показывать", "misc_task_filter"],
+    ["⚙ Настройки", "misc_settings"],
+    ["👤 Личный профиль", "misc_profile"],
+]
+
+misc_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+        for btn in misc_buttons
+    ]
+)
+
+# Кнопки для "Уведомлений"
+misc_notifications_buttons = [
+    ["📢 Показываю уведомления", "toggle_notifications"],
+    ["🕒 Напоминания о задачах", "toggle_reminders"],
+    ["⏳ Напоминать о просроченных задачах", "toggle_overdue"],
+    ["🚀 Интервал напоминаний (3ч, 6ч, 12ч)", "set_notification_interval"],
+]
+
+misc_notifications_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+        for btn in misc_notifications_buttons
+    ]
+)
+settings = {
+    "notifications": False,
+    "time_format": 24,
+    "auto_delete": 7,
+    "ai": True,
+    "task_sort": 4,
+    "task_filter": 0,
+    "language": "Russian"
+}
+
+
+notification_fun = "🔕 Отключить уведомления" if settings["notifications"] == True else "🔔 Включить уведомления"
+# Кнопки для "Настроек"
+misc_settings_buttons = [
+    [notification_fun, "notifications"],
+    ["⏰ Установить формат времени (24ч / 12ч)", "set_time_format"],
+    ["🗑 Автоудаление завершённых задач (7/30 дней)", "set_auto_delete"],
+    ["Искусственный интеллект", "set_ai"],
+    ["🌐 Смена языка", "set_language"],
+]
+
+misc_settings_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+        for btn in misc_settings_buttons
+    ]
+)
+
+# Кнопки для фильтрации задач
+misc_task_filter_buttons = [
+    ["📌 Только активные", "filter_active"],
+    ["❌ Показывать завершённые", "filter_completed"],
+    ["🔴 Показывать просроченные", "filter_overdue"],
+    ["⚠ Показывать с высоким приоритетом", "filter_high_priority"],
+    ["📅 Показывать задачи на сегодня", "filter_today"],
+    ["📝 Показывать все", "filter_all"],
+]
+
+misc_task_filter_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+        for btn in misc_task_filter_buttons
+    ]
+)
+
+# Кнопки для сортировки задач
+misc_task_sorting_buttons = [
+    ["🔼 По дате (раньше → позже)", "sort_date_asc"],
+    ["🔽 По дате (позже → раньше)", "sort_date_desc"],
+    ["⚡ По приоритету (высокий → низкий)", "sort_priority"],
+    ["🔠 По алфавиту", "sort_alphabetically"],
+    ["🔄 Сброс сортировки", "sort_reset"],
+]
+
+misc_task_sorting_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+        for btn in misc_task_sorting_buttons
+    ]
+)
+
+# Кнопки для "Личного профиля"
+misc_profile_buttons = [
+    ["✏ Изменить имя", "edit_name"],
+    ["📦 Экспорт задач (JSON / TXT)", "export_tasks"],
+    ["🔄 Сброс всех настроек", "reset_settings"],
+    ["📊 Статистика по задачам", "task_statistics"],
+]
+
+misc_profile_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text=btn[0], callback_data=btn[1])]
+        for btn in misc_profile_buttons
+    ]
+)
+
+notifications_button = []
+
+notifications_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text=notif[0], callback_data=f"task:{i}")]
+        for i, notif in enumerate(notifications_button)
+    ]
+)
+
+id = 16
+user_id = -1
+nickname = -1
+password = -1
 active_codes = {}  # Словарь для хранения кодов подтверждения
-
-
