@@ -40,7 +40,6 @@ misc_register.register_all()
 
 notifications = Notifications(bot)
 
-# 👉 ДОБАВЛЕНО: функция, вызываемая перед стартом polling
 async def on_startup():
     await bot.delete_webhook(drop_pending_updates=True)
     logging.info("Webhook deleted, bot switched to polling.")
