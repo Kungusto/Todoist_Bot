@@ -40,12 +40,17 @@ misc_register.register_all()
 
 notifications = Notifications(bot)
 
+# 👉 ДОБАВЛЕНО: функция, вызываемая перед стартом polling
+async def on_startup():
+    await bot.delete_webhook(drop_pending_updates=True)
+    logging.info("Webhook deleted, bot switched to polling.")
+
 async def main():
+    await on_startup()  # 👈 вызываем перед start_polling
     await asyncio.gather(
         notifications.start_all_tasks(),
         dp.start_polling(bot)
     )
-
 
 if __name__ == '__main__':
     try:
