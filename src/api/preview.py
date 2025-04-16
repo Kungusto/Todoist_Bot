@@ -102,7 +102,7 @@ async def edit_tasks(data, **filter_by) :
         await db.commit()
         return result
     
-# data_to_edit = TaskStepOneEdit(title='Хуйня задача')
+# data_to_edit = TaskStepOneEdit(title='Странная задача')
 # asyncio.run(edit_tasks(data_to_edit, id=1))
 
 # ----------------------------------------------------------------
@@ -121,4 +121,12 @@ async def get_tasks_hour_to_complete() :
             )
         print(tasks)
 
-asyncio.run(get_tasks_hour_to_complete())
+# asyncio.run(get_tasks_hour_to_complete())
+
+async def get_info_user() :
+    async for db in get_db() : 
+        tasks = await db.users.all_info_about_user(1)
+        print(tasks)
+
+asyncio.run(get_info_user())
+

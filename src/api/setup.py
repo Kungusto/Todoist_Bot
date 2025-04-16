@@ -1,9 +1,8 @@
 from src.api.handlers import CommandHandler
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
-token = "8090759361:AAGkfIL43EeWm5NJ7CZt3I8C-ReUZktRH_U"
-
 current_state = 0
+
 '''
 1 - это старт и помощь
 2 - это все задачи
@@ -30,7 +29,7 @@ commands = [
 0 - title (Название задачи)
 1 - subtasks (Подзадачи, список)
 2 - priority (Приоритет, где 1 - низкий, 2 - средний, 3 - высокий)
-3 - status (Статус, где 1 - в процессе, 2 - завершено, 3 - отложено, 4 - завершена)
+3 - status (Статус, где 1 - новая, 2 - в процессе, 3 - отложено, 4 - завершена)
 4 - deadline (Крайний срок в формате YYYY-MM-DD)
 """
 task_buttons = [
