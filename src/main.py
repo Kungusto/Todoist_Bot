@@ -12,12 +12,14 @@ from src.api.misc.handlers import Misc, Sort_Task, FilterTask, Settings
 from src.api.misc.notifications import Notifications
 from src.api.misc.handlers import Notification as MiscNotifications
 
-from src.api import setup
+from src.config import settings
+from src.api.misc import message_handler
+
 
 sys.path.append(str(Path(__file__).parent.parent))
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=setup.token)
+bot = Bot(token=settings.TOKEN)
 
 dp = Dispatcher()
 router = Router()
@@ -40,12 +42,9 @@ misc_register.register_all()
 
 notifications = Notifications(bot)
 
-async def on_startup():
-    await bot.delete_webhook(drop_pending_updates=True)
-    logging.info("Webhook deleted, bot switched to polling.")
+dp.include_router(message_handler.router)
 
 async def main():
-    await on_startup()  # 👈 вызываем перед start_polling
     await asyncio.gather(
         notifications.start_all_tasks(),
         dp.start_polling(bot)
