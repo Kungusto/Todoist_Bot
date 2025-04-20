@@ -1,0 +1,13 @@
+# Файл-экскурс по запуску нашего бота
+
+На компьютере обязательно должен быть скачан Docker
+
+1. Развертывание базы данных
+docker run --name todoist-db `
+    -p 6432:5432 `
+    -e POSTGRES_USER=postgres `
+    -e POSTGRES_PASSWORD=postgres `
+    -e POSTGRES_DB=postgres_db `
+    --network=my_beautiful_network `
+    --volume pg-booking-data:/var/lib/postgresql/data `
+    -d postgres:16

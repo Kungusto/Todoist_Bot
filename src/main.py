@@ -5,6 +5,9 @@ from pathlib import Path
 
 from aiogram import Bot, Dispatcher, Router
 
+sys.path.append(str(Path(__file__).parent.parent))
+logging.basicConfig(level=logging.INFO)
+
 from src.api.handlers import CommandHandler, ButtonNavHandler, ButtonEditTaskHandler, Auth
 from src.api.register import Register
 from src.api.misc.register import Register as MiscRegister
@@ -13,10 +16,6 @@ from src.api.misc.notifications import Notifications
 from src.api.misc.handlers import Notification as MiscNotifications
 
 from src.api import setup
-
-sys.path.append(str(Path(__file__).parent.parent))
-logging.basicConfig(level=logging.INFO)
-
 bot = Bot(token=setup.token)
 
 dp = Dispatcher()

@@ -5,3 +5,4 @@ alembic.ini
 venv
 .venv
 .idea
+.ruff_cache
