@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -8,7 +9,7 @@ env_path = Path(__file__).resolve().parent.parent / ".env"
 # Загружаем .env
 load_dotenv(env_path)
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings 
 
 class Settings(BaseSettings):
     DB_HOST: str

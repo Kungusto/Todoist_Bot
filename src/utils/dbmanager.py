@@ -1,4 +1,3 @@
-from src.database import async_session_maker
 from src.repositories.base_tasks import BaseTasksRepository
 from src.repositories.notifications import NotificationsRepository
 from src.repositories.tasks_first_step import TasksStepOneRepository

@@ -148,7 +148,7 @@ settings = {
 }
 
 
-notification_fun = "🔕 Отключить уведомления" if settings["notifications"] == True else "🔔 Включить уведомления"
+notification_fun = "🔕 Отключить уведомления" if settings["notifications"] else "🔔 Включить уведомления"
 # Кнопки для "Настроек"
 misc_settings_buttons = [
     [notification_fun, "notifications"],

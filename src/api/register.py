@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 
 from src.api.setup import commands
 from src.api.userInputHandler import UserInputHandler
+from src.api.data import set_task
 from src.api.data import *
 from src.api.ai import AI
 

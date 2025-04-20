@@ -1,0 +1,26 @@
+services:
+  telegram-bot:
+    depends_on:
+      - ollama-server
+    container_name: 
+      - telegram-bot
+    build:
+      context: .
+    networks:
+      - todoistNetwork
+    env_file:
+      - ".env" 
+  
+  ollama:
+    container_name: 
+      - ollama-server
+    image: 
+      - ollama/ollama:latest  # Пример Docker-образа Ollama
+    ports:
+      - "11434:11434"  # Порт, на котором Ollama будет слушать
+    networks:
+      - todoistNetwork
+
+networks:
+  todoistNetwork:
+    external: True

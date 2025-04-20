@@ -21,7 +21,7 @@ class AI:
         print("Формируем дату...")
 
         # Явно указываем адрес Ollama
-        client = ollama.Client(host="http://localhost:11434")
+        client = ollama.Client(host="http://ollama-server:11434")
         today_data = await self.get_today_data()
 
 
@@ -76,7 +76,7 @@ class AI:
         ]
 
         # Отправляем запрос в Ollama
-        client = ollama.Client(host="http://localhost:11434")
+        client = ollama.Client(host="http://ollama-server:11434")
         response = client.chat(model="qwen2.5-coder:latest", messages=messages)
 
         # Получаем ответ и ищем JSON внутри

@@ -1,6 +1,5 @@
 from sqlalchemy import select
 
-from src.repositories.base import BaseRepository
 from src.repositories.base_tasks import BaseTasksRepository
 from src.models.tasks_first_step import TasksFirstStepOrm
 from src.schemas.tasks_first_step import TaskStepOne

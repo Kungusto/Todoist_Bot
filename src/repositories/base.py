@@ -1,6 +1,4 @@
 from sqlalchemy import insert, select, update
-from src.database import async_session_maker
-from pydantic import BaseModel
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import delete
 

@@ -1,7 +1,6 @@
 from src.database import Base
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Integer, String, ForeignKey
-from datetime import datetime
+from sqlalchemy import String, ForeignKey
 
 class TasksSecondStepORM(Base) : 
     __tablename__ = 'TasksStep2'
