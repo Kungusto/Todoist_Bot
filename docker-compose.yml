@@ -1,11 +1,13 @@
 services:  
   ollama:
     container_name: ollama-server
-    image: ollama/ollama:latest  # Пример Docker-образа Ollama
+    image: ollama/ollama:latest
     ports:
-      - "11434:11434"  # Порт, на котором Ollama будет слушать
+      - "11434:11434"  
     networks:
       - todoistNetwork
+    volumes:
+      - ollama:/root/.ollama
 
   telegram-bot:
     container_name: telegram-bot
@@ -21,3 +23,6 @@ services:
 networks:
   todoistNetwork:
     external: True
+
+volumes:
+  ollama:

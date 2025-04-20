@@ -137,7 +137,7 @@ class AI:
         prompt = f"Пользователь написал: {self.prompt}. Сгенерируй на это сообщение разумный ответ."
 
         # Создаём клиент Ollama
-        client = ollama.Client(host="http://localhost:11434")
+        client = ollama.Client(host="http://ollama_server:11434")
 
         # Сообщение для нейросети
         messages = [
