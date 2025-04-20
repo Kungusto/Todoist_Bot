@@ -25,7 +25,7 @@ class Notifications:
                     continue
 
                 try:
-                    task_time = datetime.strptime(task_time_str, "%Y-%m-%d-%H-%M-%S").replace(tzinfo=user_tz)
+                    task_time = datetime.strptime(task_time_str, "%Y-%m-%d-%H-%M").replace(tzinfo=user_tz)
                 except Exception as e:
                     print(f"Ошибка разбора даты задачи ({task[0]}): {task_time_str} -> {e}")
                     continue
@@ -56,7 +56,7 @@ class Notifications:
                     continue
 
                 try:
-                    task_time = datetime.strptime(task_time_str, "%Y-%m-%d-%H-%M-%S").replace(tzinfo=user_tz)
+                    task_time = datetime.strptime(task_time_str, "%Y-%m-%d-%H-%M").replace(tzinfo=user_tz)
                 except Exception as e:
                     print(f"Ошибка разбора даты задачи ({task[0]}): {task_time_str} -> {e}")
                     continue
